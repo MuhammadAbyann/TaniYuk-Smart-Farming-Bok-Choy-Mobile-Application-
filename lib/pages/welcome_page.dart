@@ -32,7 +32,7 @@ class WelcomePage extends StatelessWidget {
               children: [
                 SizedBox.expand(
                   child: Image.asset(
-                    'assets/images/farming.jpeg', // pastikan gambar ada di folder assets
+                    'assets/images/farming.jpeg',
                     fit: BoxFit.cover,
                   ),
                 ),
