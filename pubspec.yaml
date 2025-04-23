@@ -61,6 +61,7 @@ flutter:
   assets:
     - assets/images/farming.jpeg
     - assets/images/google.png
+    - assets/images/farming-2.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
