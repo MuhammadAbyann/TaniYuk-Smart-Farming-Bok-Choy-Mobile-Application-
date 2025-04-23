@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'login_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -115,7 +116,10 @@ class WelcomePage extends StatelessWidget {
                           style: TextStyle(color: Colors.grey)),
                       GestureDetector(
                         onTap: () {
-                          // navigasi ke halaman login
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const LoginPage()),
+                          );
                         },
                         child: const Text(
                           'Masuk',
