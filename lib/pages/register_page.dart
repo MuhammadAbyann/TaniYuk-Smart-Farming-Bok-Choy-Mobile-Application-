@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smartfarmingpakcoy_apps/pages/home_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -19,12 +20,32 @@ class _RegisterPageState extends State<RegisterPage> {
   bool showPassword = false;
   bool showConfirmPassword = false;
 
+  // Tambahan: Role
+  String? selectedRole;
+  final List<String> roles = ['Petani', 'Pemilik Lahan'];
+
   void _register() {
     if (_formKey.currentState!.validate()) {
-      // TODO: Lanjutkan ke backend/Firebase
+      final email = emailController.text.trim();
+      final password = passwordController.text.trim();
+      final role = selectedRole;
+
+      // TODO: Kirim ke backend di sini
+      print('Email: $email');
+      print('Password: $password');
+      print('Role: $role');
+
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("Pendaftaran berhasil!")));
+
+      // Navigasi ke halaman utama setelah 500ms
+      Future.delayed(const Duration(milliseconds: 500), () {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomePage()),
+        );
+      });
     }
   }
 
@@ -60,6 +81,8 @@ class _RegisterPageState extends State<RegisterPage> {
                       const SizedBox(height: 8),
                       const Text("Silahkan buat akunmu"),
                       const SizedBox(height: 20),
+
+                      // Email
                       TextFormField(
                         controller: emailController,
                         decoration: const InputDecoration(
@@ -78,6 +101,8 @@ class _RegisterPageState extends State<RegisterPage> {
                         },
                       ),
                       const SizedBox(height: 10),
+
+                      // Password
                       TextFormField(
                         controller: passwordController,
                         obscureText: !showPassword,
@@ -106,6 +131,8 @@ class _RegisterPageState extends State<RegisterPage> {
                         },
                       ),
                       const SizedBox(height: 10),
+
+                      // Konfirmasi Password
                       TextFormField(
                         controller: confirmPasswordController,
                         obscureText: !showConfirmPassword,
@@ -134,6 +161,37 @@ class _RegisterPageState extends State<RegisterPage> {
                         },
                       ),
                       const SizedBox(height: 10),
+
+                      // Dropdown Role
+                      DropdownButtonFormField<String>(
+                        decoration: const InputDecoration(
+                          labelText: 'Pilih Peran',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.person_outline),
+                        ),
+                        value: selectedRole,
+                        items:
+                            roles.map((String role) {
+                              return DropdownMenuItem<String>(
+                                value: role,
+                                child: Text(role),
+                              );
+                            }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedRole = value;
+                          });
+                        },
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Silakan pilih peran';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 10),
+
+                      // Checkbox dan lupa password
                       Row(
                         children: [
                           Checkbox(
@@ -155,6 +213,8 @@ class _RegisterPageState extends State<RegisterPage> {
                         ],
                       ),
                       const SizedBox(height: 20),
+
+                      // Tombol daftar
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
@@ -167,14 +227,16 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                       ),
                       const SizedBox(height: 20),
+
+                      // Navigasi ke login
                       Center(
                         child: GestureDetector(
                           onTap: () {
-                            // TODO: navigasi ke halaman login
+                            Navigator.pop(context); // kembali ke login
                           },
                           child: const Text.rich(
                             TextSpan(
-                              text: "Sudah punya akun?",
+                              text: "Sudah punya akun? ",
                               children: [
                                 TextSpan(
                                   text: "Login",
