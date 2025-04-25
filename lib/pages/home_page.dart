@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'register_page.dart';
-import 'login_page.dart';
+import 'package:smartfarmingpakcoy_apps/pages/statistic.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -155,9 +154,7 @@ class _HomePageState extends State<HomePage> {
   Widget _getBody() {
     switch (selectedIndex) {
       case 0:
-        return const Center(
-          child: Text("📊 Halaman Statistik", style: TextStyle(fontSize: 18)),
-        );
+        return const StatisticPage(); // ← Ini menampilkan halaman Statistik yang kita buat
       case 2:
         return const Center(
           child: Text("👤 Profil Pengguna", style: TextStyle(fontSize: 18)),

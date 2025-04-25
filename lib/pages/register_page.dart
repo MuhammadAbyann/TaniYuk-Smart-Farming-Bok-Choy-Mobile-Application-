@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smartfarmingpakcoy_apps/pages/home_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -29,14 +30,20 @@ class _RegisterPageState extends State<RegisterPage> {
       final password = passwordController.text.trim();
       final role = selectedRole;
 
-      // TODO: Kirim ke backend di sini
       print('Email: $email');
       print('Password: $password');
       print('Role: $role');
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Pendaftaran berhasil!")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Pendaftaran berhasil!")));
+
+      Future.delayed(const Duration(milliseconds: 500), () {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomePage()),
+        );
+      });
     }
   }
 
@@ -161,12 +168,13 @@ class _RegisterPageState extends State<RegisterPage> {
                           prefixIcon: Icon(Icons.person_outline),
                         ),
                         value: selectedRole,
-                        items: roles.map((String role) {
-                          return DropdownMenuItem<String>(
-                            value: role,
-                            child: Text(role),
-                          );
-                        }).toList(),
+                        items:
+                            roles.map((String role) {
+                              return DropdownMenuItem<String>(
+                                value: role,
+                                child: Text(role),
+                              );
+                            }).toList(),
                         onChanged: (value) {
                           setState(() {
                             selectedRole = value;
