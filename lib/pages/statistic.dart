@@ -58,7 +58,7 @@ class _MonitoringSectionState extends State<MonitoringSection> {
         // TODO: Navigasi ke halaman detail
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text("Klik ${widget.title}")));
+        ).showSnackBar(SnackBar(content: Text("Klik  ${widget.title}")));
       },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
