@@ -1,25 +1,99 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'home_page.dart';
+import 'register_page.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  bool rememberMe = false;
+
+  @override
+  void initState() {
+    super.initState();
+    loadSavedCredentials();
+  }
+
+  Future<void> loadSavedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      emailController.text = prefs.getString('saved_email') ?? '';
+      passwordController.text = prefs.getString('saved_password') ?? '';
+      rememberMe = prefs.getBool('remember_me') ?? false;
+    });
+  }
+
+  Future<void> saveCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (rememberMe) {
+      await prefs.setString('saved_email', emailController.text);
+      await prefs.setString('saved_password', passwordController.text);
+      await prefs.setBool('remember_me', true);
+    } else {
+      await prefs.remove('saved_email');
+      await prefs.remove('saved_password');
+      await prefs.setBool('remember_me', false);
+    }
+  }
+
+  void _login() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("Email dan password tidak boleh kosong")));
+      return;
+    }
+
+    // Simulasi login sukses
+    await saveCredentials();
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const HomePage()),
+    );
+  }
+
+  void _forgotPassword() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Lupa Password"),
+        content: const Text("Fitur lupa password akan mengirimkan link reset ke emailmu. (Belum aktif di versi ini)"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("OK"),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Column(
-          children: [
-            // 🖼️ Tambahkan gambar di atas
-            SizedBox(
-              height: MediaQuery.of(context).size.height * 0.35,
-              width: double.infinity,
-              child: Image.asset(
-                'assets/images/farming-2.jpeg',
-                fit: BoxFit.cover,
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.35,
+                width: double.infinity,
+                child: Image.asset(
+                  'assets/images/farming-2.jpeg',
+                  fit: BoxFit.cover,
+                ),
               ),
-            ),
-            Expanded(
-              child: Padding(
+              Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
                   children: [
@@ -29,16 +103,18 @@ class LoginPage extends StatelessWidget {
                     ),
                     const Text("Silahkan login ke akunmu"),
                     const SizedBox(height: 20),
-                    const TextField(
-                      decoration: InputDecoration(
+                    TextField(
+                      controller: emailController,
+                      decoration: const InputDecoration(
                         labelText: 'Alamat Email',
                         border: OutlineInputBorder(),
                       ),
                     ),
                     const SizedBox(height: 10),
-                    const TextField(
+                    TextField(
+                      controller: passwordController,
                       obscureText: true,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         labelText: 'Password',
                         border: OutlineInputBorder(),
                       ),
@@ -48,21 +124,30 @@ class LoginPage extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            Checkbox(value: false, onChanged: (val) {}),
+                            Checkbox(
+                              value: rememberMe,
+                              onChanged: (val) {
+                                setState(() {
+                                  rememberMe = val!;
+                                });
+                              },
+                            ),
                             const Text("Remember me"),
                           ],
                         ),
                         TextButton(
-                          onPressed: () {},
+                          onPressed: _forgotPassword,
                           child: const Text("Lupa Password"),
                         ),
                       ],
                     ),
                     const SizedBox(height: 20),
                     ElevatedButton(
-                      onPressed: () {
-                        // aksi login
-                      },
+                      onPressed: _login,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        minimumSize: const Size.fromHeight(50),
+                      ),
                       child: const Text("Login"),
                     ),
                     const SizedBox(height: 10),
@@ -72,7 +157,10 @@ class LoginPage extends StatelessWidget {
                         const Text("Don’t have an account?"),
                         TextButton(
                           onPressed: () {
-                            // navigasi ke halaman register
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const RegisterPage()),
+                            );
                           },
                           child: const Text("Sign up"),
                         ),
@@ -81,8 +169,8 @@ class LoginPage extends StatelessWidget {
                   ],
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
