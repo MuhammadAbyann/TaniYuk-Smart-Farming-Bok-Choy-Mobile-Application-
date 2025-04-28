@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'pages/welcome_page.dart'; // pastikan ini sesuai path file kamu
+import 'screens/splash_screen.dart'; // pastikan path sudah benar ke splash_screen.dart
 
 void main() {
   runApp(const MyApp());
@@ -12,8 +12,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Smart Farming',
-      home: const WelcomePage(),
       debugShowCheckedModeBanner: false,
+      home: const SplashScreen(), // Ganti WelcomePage jadi SplashScreen
     );
   }
 }
