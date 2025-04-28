@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'home_page.dart';
 import 'register_page.dart';
+import 'package:smartfarmingpakcoy_apps/services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -43,24 +44,31 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  void _login() async {
-    final email = emailController.text.trim();
-    final password = passwordController.text.trim();
+ void _login() async {
+  final email = emailController.text.trim();
+  final password = passwordController.text.trim();
 
-    if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Email dan password tidak boleh kosong")));
-      return;
-    }
+  if (email.isEmpty || password.isEmpty) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text("Email dan password tidak boleh kosong")));
+    return;
+  }
 
-    // Simulasi login sukses
-    await saveCredentials();
+  try {
+    final result = await AuthService.login(email: email, password: password);
 
+    // Kalau login sukses
+    await saveCredentials(); // Remember me
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => const HomePage()),
     );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Login gagal: $e')),
+    );
   }
+}
 
   void _forgotPassword() {
     showDialog(

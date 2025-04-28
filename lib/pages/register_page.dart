@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:smartfarmingpakcoy_apps/pages/home_page.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'login_page.dart';
+import 'package:smartfarmingpakcoy_apps/services/auth_service.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -10,42 +13,38 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
-
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController =
-      TextEditingController();
+  final TextEditingController confirmPasswordController = TextEditingController();
 
-  bool rememberMe = false;
+  String selectedRole = 'petani';
   bool showPassword = false;
   bool showConfirmPassword = false;
 
-  // Tambahan: Role
-  String? selectedRole;
-  final List<String> roles = ['Petani', 'Pemilik Lahan'];
+Future<void> _register() async {
+  if (_formKey.currentState!.validate()) {
+    try {
+      await AuthService.register(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+        role: selectedRole,
+      );
 
-  void _register() {
-    if (_formKey.currentState!.validate()) {
-      final email = emailController.text.trim();
-      final password = passwordController.text.trim();
-      final role = selectedRole;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pendaftaran berhasil!')),
+      );
 
-      print('Email: $email');
-      print('Password: $password');
-      print('Role: $role');
-
-      ScaffoldMessenger.of(
+      Navigator.pushReplacement(
         context,
-      ).showSnackBar(const SnackBar(content: Text("Pendaftaran berhasil!")));
-
-      Future.delayed(const Duration(milliseconds: 500), () {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomePage()),
-        );
-      });
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal daftar: $e')),
+      );
     }
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -67,20 +66,13 @@ class _RegisterPageState extends State<RegisterPage> {
                 child: Form(
                   key: _formKey,
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
                         "Selamat Datang!",
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                       ),
-                      const SizedBox(height: 8),
                       const Text("Silahkan buat akunmu"),
                       const SizedBox(height: 20),
-
-                      // Email
                       TextFormField(
                         controller: emailController,
                         decoration: const InputDecoration(
@@ -92,15 +84,10 @@ class _RegisterPageState extends State<RegisterPage> {
                           if (value == null || value.isEmpty) {
                             return 'Email tidak boleh kosong';
                           }
-                          if (!RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
-                            return 'Masukkan email yang valid';
-                          }
                           return null;
                         },
                       ),
                       const SizedBox(height: 10),
-
-                      // Password
                       TextFormField(
                         controller: passwordController,
                         obscureText: !showPassword,
@@ -110,9 +97,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           border: const OutlineInputBorder(),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              showPassword
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
+                              showPassword ? Icons.visibility : Icons.visibility_off,
                             ),
                             onPressed: () {
                               setState(() {
@@ -129,8 +114,6 @@ class _RegisterPageState extends State<RegisterPage> {
                         },
                       ),
                       const SizedBox(height: 10),
-
-                      // Konfirmasi Password
                       TextFormField(
                         controller: confirmPasswordController,
                         obscureText: !showConfirmPassword,
@@ -140,9 +123,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           border: const OutlineInputBorder(),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              showConfirmPassword
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
+                              showConfirmPassword ? Icons.visibility : Icons.visibility_off,
                             ),
                             onPressed: () {
                               setState(() {
@@ -159,95 +140,35 @@ class _RegisterPageState extends State<RegisterPage> {
                         },
                       ),
                       const SizedBox(height: 10),
-
-                      // Dropdown Role
                       DropdownButtonFormField<String>(
-                        decoration: const InputDecoration(
-                          labelText: 'Pilih Peran',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.person_outline),
-                        ),
                         value: selectedRole,
-                        items:
-                            roles.map((String role) {
-                              return DropdownMenuItem<String>(
-                                value: role,
-                                child: Text(role),
-                              );
-                            }).toList(),
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          labelText: 'Pilih Peran',
+                        ),
+                        items: const [
+                          DropdownMenuItem(value: 'petani', child: Text('Petani')),
+                          DropdownMenuItem(value: 'pemilik_lahan', child: Text('Pemilik Lahan')),
+                        ],
                         onChanged: (value) {
                           setState(() {
-                            selectedRole = value;
+                            selectedRole = value!;
                           });
                         },
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Silakan pilih peran';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 10),
-
-                      // Checkbox dan lupa password
-                      Row(
-                        children: [
-                          Checkbox(
-                            value: rememberMe,
-                            onChanged: (value) {
-                              setState(() {
-                                rememberMe = value!;
-                              });
-                            },
-                          ),
-                          const Text("Remember me"),
-                          const Spacer(),
-                          TextButton(
-                            onPressed: () {
-                              // TODO: arahkan ke halaman lupa password
-                            },
-                            child: const Text("Lupa Password"),
-                          ),
-                        ],
                       ),
                       const SizedBox(height: 20),
-
-                      // Tombol daftar
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: _register,
                           style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
                             backgroundColor: Colors.teal,
                           ),
                           child: const Text("Daftar"),
                         ),
                       ),
-                      const SizedBox(height: 20),
-
-                      // Navigasi ke login
-                      Center(
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.pop(context); // kembali ke login
-                          },
-                          child: const Text.rich(
-                            TextSpan(
-                              text: "Sudah punya akun? ",
-                              children: [
-                                TextSpan(
-                                  text: "Login",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.teal,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
+                      const SizedBox(height: 40), // Tambahan space bawah
                     ],
                   ),
                 ),
