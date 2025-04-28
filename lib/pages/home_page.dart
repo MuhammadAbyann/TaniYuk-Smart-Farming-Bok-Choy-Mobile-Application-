@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:smartfarmingpakcoy_apps/pages/statistic.dart';
+import 'package:smartfarmingpakcoy_apps/pages/profile_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -156,9 +157,7 @@ class _HomePageState extends State<HomePage> {
       case 0:
         return const StatisticPage(); // ← Ini menampilkan halaman Statistik yang kita buat
       case 2:
-        return const Center(
-          child: Text("👤 Profil Pengguna", style: TextStyle(fontSize: 18)),
-        );
+        return const ProfilePage();
       default:
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
