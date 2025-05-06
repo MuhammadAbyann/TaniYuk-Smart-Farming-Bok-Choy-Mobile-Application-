@@ -3,6 +3,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'login_page.dart';
 import 'package:smartfarmingpakcoy_apps/services/auth_service.dart';
+import 'package:smartfarmingpakcoy_apps/pages/welcome_page.dart';
+
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -36,7 +38,7 @@ Future<void> _register() async {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const LoginPage()),
+        MaterialPageRoute(builder: (context) => const WelcomePage()),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -45,6 +47,7 @@ Future<void> _register() async {
     }
   }
 }
+
 
   @override
   Widget build(BuildContext context) {
@@ -168,7 +171,7 @@ Future<void> _register() async {
                           child: const Text("Daftar"),
                         ),
                       ),
-                      const SizedBox(height: 40), // Tambahan space bawah
+                      const SizedBox(height: 40), 
                     ],
                   ),
                 ),
