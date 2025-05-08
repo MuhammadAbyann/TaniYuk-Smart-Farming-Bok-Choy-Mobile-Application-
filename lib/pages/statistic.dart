@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:smartfarmingpakcoy_apps/pages/fertilize_page.dart';
-import 'package:smartfarmingpakcoy_apps/pages/watering_page.dart'; // Mengimpor halaman WateringPage
+import 'package:smartfarmingpakcoy_apps/pages/lightintensity_page.dart'; // Mengimpor halaman LightIntensityPage
+import 'package:smartfarmingpakcoy_apps/pages/watering_page.dart';
 
 class StatisticPage extends StatelessWidget {
   const StatisticPage({super.key});
@@ -14,15 +15,13 @@ class StatisticPage extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              // Mengarahkan ke halaman WateringPage saat Kelembapan dipilih
+              // GestureDetector untuk Kelembapan yang mengarahkan ke WateringPage
               GestureDetector(
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder:
-                          (context) =>
-                              const WateringControlPage(), // Ganti ke WateringPage
+                      builder: (context) => const WateringControlPage(),
                     ),
                   );
                 },
@@ -32,11 +31,26 @@ class StatisticPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              const MonitoringSection(
-                title: 'Intensitas Cahaya',
-                radioOptions: ['Lembab', 'Sedang', 'Kurang'],
+
+              // GestureDetector untuk Intensitas Cahaya yang mengarahkan ke LightIntensityPage
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) =>
+                              const LightIntensityPage(), // Ganti ke LightIntensityPage
+                    ),
+                  );
+                },
+                child: const MonitoringSection(
+                  title: 'Intensitas Cahaya',
+                  radioOptions: ['Lembab', 'Sedang', 'Kurang'],
+                ),
               ),
               const SizedBox(height: 20),
+
               // Tombol Pemupukan yang terhubung ke FertilizerControlPage
               GestureDetector(
                 onTap: () {
