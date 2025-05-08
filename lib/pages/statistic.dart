@@ -19,7 +19,7 @@ class StatisticPage extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               const MonitoringSection(
-                title: 'pH Tanah',
+                title: 'Intensitas Cahaya',
                 radioOptions: ['Lembab', 'Sedang', 'Kurang'],
               ),
               const SizedBox(height: 20),

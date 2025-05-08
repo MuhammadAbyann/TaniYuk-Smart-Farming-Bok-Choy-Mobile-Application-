@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
+import 'package:fl_chart/fl_chart.dart'; // Untuk menampilkan grafik
 
 class FertilizerControlPage extends StatefulWidget {
   const FertilizerControlPage({super.key});
@@ -9,232 +9,194 @@ class FertilizerControlPage extends StatefulWidget {
 }
 
 class _FertilizerControlPageState extends State<FertilizerControlPage> {
-  String selectedMode = 'Otomatis';
-  double nutrientLevel = 0.75; // Dummy kadar nutrisi 75%
-
-  @override
-  void initState() {
-    super.initState();
-    _simulateSensor();
-  }
-
-  // Simulasi data sensor nutrisi
-  void _simulateSensor() {
-    Timer.periodic(const Duration(seconds: 2), (timer) {
-      setState(() {
-        nutrientLevel = (nutrientLevel + 0.05) % 1.0;
-      });
-    });
-  }
-
-  void _setMode(String mode) {
-    setState(() {
-      selectedMode = mode;
-    });
-  }
-
-  void _startFertilizing() {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Konfirmasi'),
-            content: Text('Mulai pemupukan mode: $selectedMode?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Batal'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Pemupukan $selectedMode dijalankan!'),
-                    ),
-                  );
-                },
-                child: const Text('Jalankan'),
-              ),
-            ],
-          ),
-    );
-  }
-
-  Widget _buildSelector(String label, Alignment alignment) {
-    return Align(
-      alignment: alignment,
-      child: GestureDetector(
-        onTap: () => _setMode(label),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: selectedMode == label ? Colors.redAccent : Colors.black87,
-          ),
-        ),
-      ),
-    );
-  }
+  String selectedAmount = 'Sedikit';
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.green[700], // Hijau tua untuk app bar
+        title: const Text('Kontrol Pemupukan'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context); // Kembali ke halaman sebelumnya
+          },
+        ),
+      ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.arrow_back),
+              // Logo bunga berbentuk lingkaran di atas dengan background yang lebih soft
+              Container(
+                height: 200,
+                width: 200,
+                decoration: BoxDecoration(
+                  color:
+                      Colors.green[100], // Background hijau lembut untuk logo
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.green[700]!, width: 3),
+                ),
+                alignment: Alignment.center,
+                child: CircleAvatar(
+                  radius: 70,
+                  backgroundColor: Colors.white,
+                  child: CircleAvatar(
+                    radius: 65,
+                    backgroundColor: Colors.green[700],
+                    child: Icon(
+                      Icons.local_florist,
+                      size: 50,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
               ),
-              Expanded(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.brown[300],
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Text(
-                              'Kontrol Pemupukan',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                Container(
-                                  width: 180,
-                                  height: 180,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Colors.green[300],
-                                  ),
-                                ),
-                                Container(
-                                  width: 100,
-                                  height: 100,
-                                  decoration: const BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Colors.green,
-                                  ),
-                                ),
-                                _buildSelector(
-                                  'Otomatis',
-                                  const Alignment(0, -1.2),
-                                ),
-                                _buildSelector(
-                                  'Banyak',
-                                  const Alignment(-1.2, 0),
-                                ),
-                                _buildSelector(
-                                  'Sedikit',
-                                  const Alignment(1.2, 0),
-                                ),
-                                _buildSelector(
-                                  'Sedang',
-                                  const Alignment(0, 1.2),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 20),
-                            ElevatedButton(
-                              onPressed: _startFertilizing,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.brown[200],
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 30,
-                                  vertical: 14,
-                                ),
-                              ),
-                              child: const Text(
-                                'JALANKAN',
-                                style: TextStyle(color: Colors.black),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 30),
-                      Container(
-                        height: 150,
-                        width: 150,
-                        decoration: BoxDecoration(
-                          color: Colors.brown[300],
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  SizedBox(
-                                    height: 100,
-                                    width: 100,
-                                    child: CircularProgressIndicator(
-                                      value: nutrientLevel,
-                                      strokeWidth: 8,
-                                      backgroundColor: Colors.white24,
-                                      color: Colors.greenAccent,
-                                    ),
-                                  ),
-                                  Text(
-                                    "${(nutrientLevel * 100).toInt()}%",
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              const Text(
-                                'Kadar Nutrisi',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+              const SizedBox(height: 20),
+
+              // Grafik Monitoring dengan background yang lebih jelas
+              Container(
+                height: 200,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color:
+                      Colors.green[50], // Background hijau lembut untuk grafik
+                  shape: BoxShape.rectangle,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                padding: const EdgeInsets.all(12),
+                child: LineChart(
+                  LineChartData(
+                    gridData: FlGridData(show: false),
+                    titlesData: FlTitlesData(show: false),
+                    borderData: FlBorderData(show: false),
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: [
+                          FlSpot(0, 3),
+                          FlSpot(1, 1.5),
+                          FlSpot(2, 2),
+                          FlSpot(3, 1.8),
+                          FlSpot(4, 2.8),
+                        ],
+                        isCurved: true,
+                        color: Colors.white,
+                        dotData: FlDotData(show: false),
+                        belowBarData: BarAreaData(show: false),
                       ),
                     ],
                   ),
                 ),
               ),
+              const SizedBox(height: 20),
+
+              // Pilihan Jumlah Pemupukan dengan background yang lebih jelas
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color:
+                      Colors
+                          .green[50], // Background lebih soft untuk tombol pemupukan
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 8,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildAmountButton('Banyak', Icons.water_drop),
+                    _buildAmountButton('Sedang', Icons.local_florist),
+                    _buildAmountButton('Sedikit', Icons.ac_unit),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Pilihan Otomatis (diletakkan di bawah dengan desain yang konsisten)
+              _buildAmountButton(
+                'Otomatis',
+                Icons.autorenew,
+              ), // Tombol Otomatis di bawah tombol lainnya
+
+              const SizedBox(height: 30),
+
+              // Tombol Jalankan Pemupukan yang lebih menonjol
+              ElevatedButton(
+                onPressed: () {
+                  // Aksi ketika tombol jalankan diklik
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Pemupukan Berhasil Dilakukan'),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange, // Memberikan warna mencolok
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 60,
+                    vertical: 18,
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  elevation:
+                      10, // Memberikan bayangan agar tombol lebih menonjol
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      12,
+                    ), // Sudut lebih melengkung
+                  ),
+                ),
+                child: const Text('Jalankan'),
+              ),
             ],
           ),
         ),
       ),
-      bottomNavigationBar: Container(
-        height: 70,
-        decoration: const BoxDecoration(
-          color: Color(0xFF184C45),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+    );
+  }
+
+  // Fungsi untuk membuat tombol pilihan jumlah pemupukan dengan ikon
+  Widget _buildAmountButton(String amount, IconData icon) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedAmount = amount; // Update pilihan jumlah pemupukan
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color:
+              selectedAmount == amount ? Colors.green[700] : Colors.transparent,
+          border: Border.all(color: Colors.green[700]!),
+          borderRadius: BorderRadius.circular(12),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: const [
-            Icon(Icons.bar_chart, color: Colors.white),
-            Icon(Icons.home, color: Colors.white),
-            Icon(Icons.person, color: Colors.white),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              size: 30,
+              color:
+                  selectedAmount == amount ? Colors.white : Colors.green[700],
+            ),
+            const SizedBox(height: 5),
+            Text(
+              amount,
+              style: TextStyle(
+                fontSize: 16,
+                color:
+                    selectedAmount == amount ? Colors.white : Colors.green[700],
+              ),
+            ),
           ],
         ),
       ),

@@ -50,7 +50,7 @@ class _HomePageState extends State<HomePage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                "Monitoring",
+                "MONITORING",
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,

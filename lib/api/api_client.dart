@@ -2,7 +2,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class ApiClient {
-  static const String _baseUrl = 'http://10.0.2.2:5000';
+  static const String _baseUrl =
+      'https://1d69-2404-8000-1024-1a37-6d64-d09a-8e0b-a798.ngrok-free.app';
 
   // GET Request
   static Future<dynamic> get(String endpoint) async {
@@ -11,7 +12,10 @@ class ApiClient {
   }
 
   // POST Request
-  static Future<dynamic> post(String endpoint, Map<String, dynamic> body) async {
+  static Future<dynamic> post(
+    String endpoint,
+    Map<String, dynamic> body,
+  ) async {
     final response = await http.post(
       Uri.parse('$_baseUrl$endpoint'),
       headers: {'Content-Type': 'application/json'},

@@ -26,7 +26,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      nama = prefs.getString('nama') ?? 'Nama Pengguna';
+      nama = prefs.getString('nama') ?? 'Nama Farrel';
       role = prefs.getString('role') ?? 'Petani';
       lokasi = prefs.getString('lokasi') ?? 'Belum diatur';
       jenisTanaman = prefs.getString('jenisTanaman') ?? 'Pakcoy';
