@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:smartfarmingpakcoy_apps/pages/fertilize_page.dart';
+import 'package:smartfarmingpakcoy_apps/pages/watering_page.dart'; // Mengimpor halaman WateringPage
 
 class StatisticPage extends StatelessWidget {
   const StatisticPage({super.key});
@@ -13,9 +14,22 @@ class StatisticPage extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              const MonitoringSection(
-                title: 'Kelembapan',
-                radioOptions: ['Tinggi', 'Sedang', 'Rendah'],
+              // Mengarahkan ke halaman WateringPage saat Kelembapan dipilih
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) =>
+                              const WateringControlPage(), // Ganti ke WateringPage
+                    ),
+                  );
+                },
+                child: const MonitoringSection(
+                  title: 'Kelembapan',
+                  radioOptions: ['Tinggi', 'Sedang', 'Rendah'],
+                ),
               ),
               const SizedBox(height: 20),
               const MonitoringSection(
@@ -23,6 +37,7 @@ class StatisticPage extends StatelessWidget {
                 radioOptions: ['Lembab', 'Sedang', 'Kurang'],
               ),
               const SizedBox(height: 20),
+              // Tombol Pemupukan yang terhubung ke FertilizerControlPage
               GestureDetector(
                 onTap: () {
                   Navigator.push(
