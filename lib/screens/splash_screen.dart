@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:smartfarmingpakcoy_apps/services/auth_service.dart';
 import 'package:smartfarmingpakcoy_apps/pages/home_page.dart';
-import 'package:smartfarmingpakcoy_apps/pages/login_page.dart';
 import 'package:smartfarmingpakcoy_apps/pages/welcome_page.dart';
 
 

@@ -1,110 +1,127 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:smartfarmingpakcoy_apps/pages/fertilize_page.dart';
-import 'package:smartfarmingpakcoy_apps/pages/lightintensity_page.dart'; // Mengimpor halaman LightIntensityPage
-import 'package:smartfarmingpakcoy_apps/pages/watering_page.dart';
+import 'package:smartfarmingpakcoy_apps/api/api_client.dart';
+import 'package:smartfarmingpakcoy_apps/pages/sensor_data.dart';
 
-class StatisticPage extends StatelessWidget {
+class StatisticPage extends StatefulWidget {
   const StatisticPage({super.key});
+
+  @override
+  State<StatisticPage> createState() => _StatisticPageState();
+}
+
+class _StatisticPageState extends State<StatisticPage> {
+  late Future<List<SensorData>> sensorFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    sensorFuture = ApiClient.getDailySensorData();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              // GestureDetector untuk Kelembapan yang mengarahkan ke WateringPage
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const WateringControlPage(),
-                    ),
-                  );
-                },
-                child: const MonitoringSection(
-                  title: 'Kelembapan',
-                  radioOptions: ['Tinggi', 'Sedang', 'Rendah'],
-                ),
-              ),
-              const SizedBox(height: 20),
+        child: FutureBuilder<List<SensorData>>(
+          future: sensorFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            } else {
+              final data = snapshot.data!;
+              data.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+              final lastTenData = data.length > 10 ? data.sublist(data.length - 10) : data;
+              final soilMoistureValues = _calcSoilMoisture(lastTenData);
+              final latestData = lastTenData.isNotEmpty ? lastTenData.last : null;
 
-              // GestureDetector untuk Intensitas Cahaya yang mengarahkan ke LightIntensityPage
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder:
-                          (context) =>
-                              const LightIntensityPage(), // Ganti ke LightIntensityPage
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    SensorChart(
+                      title: 'Intensitas Cahaya',
+                      chartData: _createChartData(
+                        lastTenData.map((d) => d.lux ?? 0.0).toList(),
+                      ),
+                      value: latestData?.lux ?? 0.0,
+                      indicatorColor: Colors.yellow,
                     ),
-                  );
-                },
-                child: const MonitoringSection(
-                  title: 'Intensitas Cahaya',
-                  radioOptions: ['Lembab', 'Sedang', 'Kurang'],
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Tombol Pemupukan yang terhubung ke FertilizerControlPage
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const FertilizerControlPage(),
+                    const SizedBox(height: 20),
+                    SensorChart(
+                      title: 'Kelembapan Tanah',
+                      chartData: _createChartData(soilMoistureValues),
+                      value: soilMoistureValues.isNotEmpty ? soilMoistureValues.last : 0.0,
+                      indicatorColor: Colors.blue,
                     ),
-                  );
-                },
-                child: const MonitoringSection(
-                  title: 'Pemupukan',
-                  radioOptions: ['Banyak', 'Sedang', 'Sedikit'],
+                    const SizedBox(height: 20),
+                    SensorChart(
+                      title: 'pH Tanah',
+                      chartData: _createChartData(
+                        lastTenData.map((d) => d.phSensor ?? 0.0).toList(),
+                      ),
+                      value: latestData?.phSensor ?? 0.0,
+                      indicatorColor: Colors.red,
+                    ),
+                    const SizedBox(height: 80),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 80), // Space bawah biar tidak ketutup nav
-            ],
-          ),
+              );
+            }
+          },
         ),
       ),
     );
   }
+
+  List<double> _calcSoilMoisture(List<SensorData> data) {
+    return data.map((d) {
+      final values = [
+        d.nanoMoisture1 ?? 0,
+        d.nanoMoisture2 ?? 0,
+        d.nanoMoisture3 ?? 0,
+        d.soilMoisture1 ?? 0,
+        d.soilMoisture2 ?? 0,
+      ];
+      final count = values.where((v) => v > 0).length;
+      if (count == 0) return 0.0;
+      return values.reduce((a, b) => a + b) / count;
+    }).toList();
+  }
+
+  List<FlSpot> _createChartData(List<double> values) {
+    return values.asMap().entries
+        .map((entry) => FlSpot(entry.key.toDouble(), entry.value))
+        .toList();
+  }
 }
 
-class MonitoringSection extends StatefulWidget {
+class SensorChart extends StatelessWidget {
   final String title;
-  final List<String> radioOptions;
+  final List<FlSpot> chartData;
+  final double value;
+  final Color indicatorColor;
 
-  const MonitoringSection({
-    super.key,
+  const SensorChart({
     required this.title,
-    required this.radioOptions,
+    required this.chartData,
+    required this.value,
+    required this.indicatorColor,
+    super.key,
   });
-
-  @override
-  State<MonitoringSection> createState() => _MonitoringSectionState();
-}
-
-class _MonitoringSectionState extends State<MonitoringSection> {
-  String? selectedOption;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Title Monitoring
         Text(
-          "Monitoring ${widget.title}",
+          "Monitoring $title",
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
-
-        // Kotak monitoring berisi grafik dummy
         Container(
           height: 150,
           width: double.infinity,
@@ -113,82 +130,86 @@ class _MonitoringSectionState extends State<MonitoringSection> {
             borderRadius: BorderRadius.circular(16),
           ),
           padding: const EdgeInsets.all(12),
-          child: LineChart(
-            LineChartData(
-              gridData: FlGridData(show: false),
-              titlesData: FlTitlesData(show: false),
-              borderData: FlBorderData(show: false),
-              lineBarsData: [
-                LineChartBarData(
-                  spots: [
-                    FlSpot(0, 3),
-                    FlSpot(1, 1.5),
-                    FlSpot(2, 2),
-                    FlSpot(3, 1.8),
-                    FlSpot(4, 2.8),
-                  ],
-                  isCurved: true,
-                  color: Colors.white,
-                  dotData: FlDotData(show: false),
-                  belowBarData: BarAreaData(show: false),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        // Radio button status
-        Wrap(
-          alignment: WrapAlignment.start,
-          spacing: 10,
-          children:
-              widget.radioOptions.map((option) {
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Radio<String>(
-                      value: option,
-                      groupValue: selectedOption,
-                      onChanged: (value) {
-                        setState(() {
-                          selectedOption = value;
-                        });
-                      },
+          child: chartData.isNotEmpty
+              ? LineChart(
+                  LineChartData(
+                    gridData: FlGridData(
+                      show: true,
+                      drawHorizontalLine: true,
+                      drawVerticalLine: true,
+                      horizontalInterval: indicatorColor == Colors.red ? 2 : 20,
+                      verticalInterval: 5,
+                      getDrawingHorizontalLine: (value) => FlLine(
+                        color: Colors.white.withOpacity(0.1),
+                        strokeWidth: 1,
+                      ),
+                      getDrawingVerticalLine: (value) => FlLine(
+                        color: Colors.white.withOpacity(0.1),
+                        strokeWidth: 1,
+                      ),
                     ),
-                    Text(option),
-                  ],
-                );
-              }).toList(),
+                    titlesData: FlTitlesData(show: false),
+                    borderData: FlBorderData(show: false),
+                    minX: 0,
+                    maxX: chartData.length.toDouble() - 1,
+                    minY: 0,
+                    maxY: indicatorColor == Colors.yellow
+                        ? 1500
+                        : indicatorColor == Colors.blue
+                            ? 100
+                            : 14,
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: chartData,
+                        isCurved: true,
+                        color: indicatorColor,
+                        dotData: FlDotData(show: false),
+                        belowBarData: BarAreaData(show: false),
+                        barWidth: 3,
+                      ),
+                    ],
+                  ),
+                )
+              : const Center(child: Text("Tidak ada data yang tersedia")),
         ),
         const SizedBox(height: 8),
-
-        // Tombol kecil di bawah
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            Expanded(
-              child: Container(
-                height: 30,
-                margin: const EdgeInsets.only(right: 8),
-                decoration: BoxDecoration(
-                  color: Colors.teal[200],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-            Expanded(
-              child: Container(
-                height: 30,
-                margin: const EdgeInsets.only(left: 8),
-                decoration: BoxDecoration(
-                  color: Colors.teal[200],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
+            _buildStatusIndicator('Tinggi', value > 60 ? Colors.green : Colors.transparent),
+            const SizedBox(width: 10),
+            _buildStatusIndicator('Sedang', value > 30 && value <= 60 ? Colors.yellow : Colors.transparent),
+            const SizedBox(width: 10),
+            _buildStatusIndicator('Rendah', value <= 30 ? Colors.red : Colors.transparent),
           ],
         ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(title),
+            Text(value.toStringAsFixed(1), style: const TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+
+  Widget _buildStatusIndicator(String label, Color color) {
+    return Row(
+      children: [
+        Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            color: color,
+            border: Border.all(color: Colors.black, width: 2),
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 5),
+        Text(label),
       ],
     );
   }

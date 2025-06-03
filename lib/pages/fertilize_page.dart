@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart'; // Untuk menampilkan grafik
+import 'package:fl_chart/fl_chart.dart';
+import 'package:http/http.dart' as http;
+import 'package:smartfarmingpakcoy_apps/api/api_client.dart';
+import 'package:smartfarmingpakcoy_apps/pages/sensor_data.dart';
 
 class FertilizerControlPage extends StatefulWidget {
   const FertilizerControlPage({super.key});
@@ -9,192 +12,216 @@ class FertilizerControlPage extends StatefulWidget {
 }
 
 class _FertilizerControlPageState extends State<FertilizerControlPage> {
-  String selectedAmount = 'Sedikit';
+  late Future<List<SensorData>> sensorFuture;
+  bool isOn = false;
+  bool isAuto = false;
+
+  @override
+  void initState() {
+    super.initState();
+    sensorFuture = ApiClient.getDailySensorData();
+  }
+
+  Future<void> sendManualCommand(bool turnOn) async {
+    final url = Uri.parse("http://192.168.4.1/manual_pupuk?status=${turnOn ? 'on' : 'off'}");
+    try {
+      final response = await http.get(url);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Manual: ${response.body}')),
+      );
+    } catch (_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal mengirim perintah manual')),
+      );
+    }
+  }
+
+  Future<void> sendAutoCommand(bool turnOn) async {
+    final url = Uri.parse("http://192.168.4.1/auto_pupuk?status=${turnOn ? 'on' : 'off'}");
+    try {
+      final response = await http.get(url);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Otomatis: ${response.body}')),
+      );
+    } catch (_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal mengirim perintah otomatis')),
+      );
+    }
+  }
+
+  void toggleManual() async {
+    setState(() {
+      isOn = !isOn;
+      isAuto = false;
+    });
+    await sendManualCommand(isOn);
+  }
+
+  void toggleAuto() async {
+    setState(() {
+      isAuto = !isAuto;
+      isOn = false;
+    });
+    await sendAutoCommand(isAuto);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.green[700], // Hijau tua untuk app bar
         title: const Text('Kontrol Pemupukan'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context); // Kembali ke halaman sebelumnya
-          },
-        ),
+        backgroundColor: Colors.green[800],
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              // Logo bunga berbentuk lingkaran di atas dengan background yang lebih soft
-              Container(
-                height: 200,
-                width: 200,
-                decoration: BoxDecoration(
-                  color:
-                      Colors.green[100], // Background hijau lembut untuk logo
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.green[700]!, width: 3),
-                ),
-                alignment: Alignment.center,
-                child: CircleAvatar(
-                  radius: 70,
-                  backgroundColor: Colors.white,
-                  child: CircleAvatar(
-                    radius: 65,
-                    backgroundColor: Colors.green[700],
-                    child: Icon(
-                      Icons.local_florist,
-                      size: 50,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Grafik Monitoring dengan background yang lebih jelas
-              Container(
-                height: 200,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color:
-                      Colors.green[50], // Background hijau lembut untuk grafik
-                  shape: BoxShape.rectangle,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                padding: const EdgeInsets.all(12),
-                child: LineChart(
-                  LineChartData(
-                    gridData: FlGridData(show: false),
-                    titlesData: FlTitlesData(show: false),
-                    borderData: FlBorderData(show: false),
-                    lineBarsData: [
-                      LineChartBarData(
-                        spots: [
-                          FlSpot(0, 3),
-                          FlSpot(1, 1.5),
-                          FlSpot(2, 2),
-                          FlSpot(3, 1.8),
-                          FlSpot(4, 2.8),
-                        ],
-                        isCurved: true,
-                        color: Colors.white,
-                        dotData: FlDotData(show: false),
-                        belowBarData: BarAreaData(show: false),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Pilihan Jumlah Pemupukan dengan background yang lebih jelas
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color:
-                      Colors
-                          .green[50], // Background lebih soft untuk tombol pemupukan
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 8,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildAmountButton('Banyak', Icons.water_drop),
-                    _buildAmountButton('Sedang', Icons.local_florist),
-                    _buildAmountButton('Sedikit', Icons.ac_unit),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Pilihan Otomatis (diletakkan di bawah dengan desain yang konsisten)
-              _buildAmountButton(
-                'Otomatis',
-                Icons.autorenew,
-              ), // Tombol Otomatis di bawah tombol lainnya
-
-              const SizedBox(height: 30),
-
-              // Tombol Jalankan Pemupukan yang lebih menonjol
-              ElevatedButton(
-                onPressed: () {
-                  // Aksi ketika tombol jalankan diklik
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Pemupukan Berhasil Dilakukan'),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange, // Memberikan warna mencolok
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 60,
-                    vertical: 18,
-                  ),
-                  textStyle: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  elevation:
-                      10, // Memberikan bayangan agar tombol lebih menonjol
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(
-                      12,
-                    ), // Sudut lebih melengkung
-                  ),
-                ),
-                child: const Text('Jalankan'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Fungsi untuk membuat tombol pilihan jumlah pemupukan dengan ikon
-  Widget _buildAmountButton(String amount, IconData icon) {
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedAmount = amount; // Update pilihan jumlah pemupukan
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color:
-              selectedAmount == amount ? Colors.green[700] : Colors.transparent,
-          border: Border.all(color: Colors.green[700]!),
-          borderRadius: BorderRadius.circular(12),
-        ),
+      backgroundColor: const Color(0xFFF8F4FA),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Icon(
-              icon,
-              size: 30,
-              color:
-                  selectedAmount == amount ? Colors.white : Colors.green[700],
+            Container(
+              width: 150,
+              height: 150,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.green[300],
+                border: Border.all(color: Colors.green[700]!, width: 2),
+              ),
+              child: Center(
+                child: Container(
+                  width: 90,
+                  height: 90,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.green[700],
+                    border: Border.all(color: Colors.white, width: 5),
+                  ),
+                  child: const Icon(
+                    Icons.local_florist,
+                    color: Colors.white,
+                    size: 50,
+                  ),
+                ),
+              ),
             ),
-            const SizedBox(height: 5),
-            Text(
-              amount,
-              style: TextStyle(
-                fontSize: 16,
-                color:
-                    selectedAmount == amount ? Colors.white : Colors.green[700],
+            const SizedBox(height: 30),
+            FutureBuilder<List<SensorData>>(
+              future: sensorFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox(
+                    height: 150,
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                } else if (snapshot.hasError) {
+                  return SizedBox(
+                    height: 150,
+                    child: Center(child: Text('Error: ${snapshot.error}')),
+                  );
+                } else {
+                  final data = snapshot.data ?? [];
+                  final chartData = data.asMap().entries.map(
+                    (entry) => FlSpot(entry.key.toDouble(), entry.value.phSensor ?? 0),
+                  ).toList();
+
+                  if (chartData.isEmpty) {
+                    return const SizedBox(
+                      height: 150,
+                      child: Center(child: Text("Tidak ada data yang tersedia")),
+                    );
+                  }
+
+                  return Container(
+                    height: 150,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.green[900],
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    padding: const EdgeInsets.all(12),
+                    child: LineChart(
+                      LineChartData(
+                        gridData: FlGridData(show: true),
+                        titlesData: FlTitlesData(show: false),
+                        borderData: FlBorderData(show: false),
+                        minX: 0,
+                        maxX: chartData.length.toDouble() - 1,
+                        minY: 0,
+                        maxY: 14,
+                        lineBarsData: [
+                          LineChartBarData(
+                            spots: chartData,
+                            isCurved: true,
+                            color: Colors.lightGreenAccent,
+                            barWidth: 3,
+                            dotData: FlDotData(show: false),
+                            belowBarData: BarAreaData(show: false),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+              },
+            ),
+            const SizedBox(height: 30),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.green[700],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: toggleManual,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        decoration: BoxDecoration(
+                          color: isOn ? Colors.green[100] : Colors.green[300],
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(12),
+                            bottomLeft: Radius.circular(12),
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            isOn ? 'OFF' : 'ON',
+                            style: TextStyle(
+                              color: isOn ? Colors.green[800] : Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: toggleAuto,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        decoration: BoxDecoration(
+                          color: isAuto ? Colors.green[100] : Colors.green[50],
+                          borderRadius: const BorderRadius.only(
+                            topRight: Radius.circular(12),
+                            bottomRight: Radius.circular(12),
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            isAuto ? 'OTOMATIS ON' : 'OTOMATIS OFF',
+                            style: TextStyle(
+                              color: Colors.green[800],
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

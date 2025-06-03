@@ -4,17 +4,28 @@ const userSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
-    unique: true,
+    unique: true
   },
   password: {
     type: String,
-    required: true,
+    required: true
   },
-  role: {
+  lokasiLahan: {
     type: String,
-    enum: ['petani', 'pemilik_lahan'],
-    required: true,
+    default: ''
+  },
+  jenisTanaman: {
+    type: String,
+    default: ''
+  },
+  luasLahan: {
+    type: String,
+    default: ''
+  },
+  lamaPanen: {
+    type: String,
+    default: ''
   }
-}, { timestamps: true });
+});
 
 module.exports = mongoose.model('User', userSchema);

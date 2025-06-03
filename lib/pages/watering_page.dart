@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart'; // Untuk menampilkan grafik
+import 'package:fl_chart/fl_chart.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+import '../api/api_client.dart';
+import '../pages/sensor_data.dart';
 
 class WateringControlPage extends StatefulWidget {
   const WateringControlPage({super.key});
@@ -9,189 +14,235 @@ class WateringControlPage extends StatefulWidget {
 }
 
 class _WateringControlPageState extends State<WateringControlPage> {
-  String selectedAmount = 'Sedikit';
+  late Future<List<SensorData>> sensorFuture;
+  double waterVolume = 0.0;
+  bool isOn = false;
+  bool isAuto = false;
+
+  @override
+  void initState() {
+    super.initState();
+    sensorFuture = ApiClient.getDailySensorData();
+    fetchWaterVolume(); // Load initial volume
+  }
+
+  Future<void> fetchWaterVolume() async {
+    try {
+      final response = await http.get(Uri.parse('http://192.168.4.1/api/sensor/total-volume'));
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body);
+        setState(() {
+          waterVolume = double.tryParse(jsonData['totalVolume'].toString()) ?? 0.0;
+        });
+      }
+    } catch (e) {
+      debugPrint('Gagal mengambil volume air: $e');
+    }
+  }
+
+  Future<void> sendManualCommand(bool turnOn) async {
+    final url = Uri.parse('http://192.168.4.1/manual?status=${turnOn ? 'on' : 'off'}');
+    try {
+      final response = await http.get(url);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Manual: ${response.body}')));
+      await fetchWaterVolume();
+    } catch (_) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal mengirim perintah manual')));
+    }
+  }
+
+  Future<void> sendAutoCommand(bool turnOn) async {
+    final url = Uri.parse('http://192.168.4.1/auto?status=${turnOn ? 'on' : 'off'}');
+    try {
+      final response = await http.get(url);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Otomatis: ${response.body}')));
+      await fetchWaterVolume();
+    } catch (_) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal mengirim perintah otomatis')));
+    }
+  }
+
+  void toggleManual() {
+    setState(() {
+      isOn = !isOn;
+      isAuto = false;
+    });
+    sendManualCommand(isOn);
+  }
+
+  void toggleAuto() {
+    setState(() {
+      isAuto = !isAuto;
+      isOn = false;
+    });
+    sendAutoCommand(isAuto);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.blue[700], // Warna biru laut untuk tema air
         title: const Text('Kontrol Penyiraman'),
+        backgroundColor: Colors.blue[700],
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context); // Kembali ke halaman sebelumnya
-          },
+          onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              // Logo air berbentuk lingkaran di atas dengan background biru
-              Container(
-                height: 200,
-                width: 200,
-                decoration: BoxDecoration(
-                  color: Colors.blue[100], // Background biru muda untuk logo
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.blue[700]!, width: 3),
-                ),
-                alignment: Alignment.center,
-                child: CircleAvatar(
-                  radius: 70,
-                  backgroundColor: Colors.white,
-                  child: CircleAvatar(
-                    radius: 65,
-                    backgroundColor: Colors.blue[700],
-                    child: Icon(
-                      Icons.water_drop,
-                      size: 50,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Grafik Monitoring untuk kelembapan tanah
-              Container(
-                height: 200,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.blue[50], // Background biru muda untuk grafik
-                  shape: BoxShape.rectangle,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                padding: const EdgeInsets.all(12),
-                child: LineChart(
-                  LineChartData(
-                    gridData: FlGridData(show: false),
-                    titlesData: FlTitlesData(show: false),
-                    borderData: FlBorderData(show: false),
-                    lineBarsData: [
-                      LineChartBarData(
-                        spots: [
-                          FlSpot(0, 3),
-                          FlSpot(1, 1.5),
-                          FlSpot(2, 2),
-                          FlSpot(3, 1.8),
-                          FlSpot(4, 2.8),
-                        ],
-                        isCurved: true,
-                        color: Colors.white,
-                        dotData: FlDotData(show: false),
-                        belowBarData: BarAreaData(show: false),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Pilihan Jumlah Penyiraman dengan background yang lebih jelas
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color:
-                      Colors
-                          .blue[50], // Background lebih soft untuk tombol penyiraman
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 8,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildAmountButton('Banyak', Icons.water_drop),
-                    _buildAmountButton('Sedang', Icons.local_florist),
-                    _buildAmountButton('Sedikit', Icons.ac_unit),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Pilihan Otomatis (diletakkan di bawah dengan desain yang konsisten)
-              _buildAmountButton(
-                'Otomatis',
-                Icons.autorenew,
-              ), // Tombol Otomatis di bawah tombol lainnya
-
-              const SizedBox(height: 30),
-
-              // Tombol Jalankan Penyiraman yang lebih menonjol
-              ElevatedButton(
-                onPressed: () {
-                  // Aksi ketika tombol jalankan diklik
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Penyiraman Berhasil Dilakukan'),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange, // Memberikan warna mencolok
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 60,
-                    vertical: 18,
-                  ),
-                  textStyle: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  elevation:
-                      10, // Memberikan bayangan agar tombol lebih menonjol
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(
-                      12,
-                    ), // Sudut lebih melengkung
-                  ),
-                ),
-                child: const Text('Jalankan'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Fungsi untuk membuat tombol pilihan jumlah penyiraman dengan ikon
-  Widget _buildAmountButton(String amount, IconData icon) {
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedAmount = amount; // Update pilihan jumlah penyiraman
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color:
-              selectedAmount == amount ? Colors.blue[700] : Colors.transparent,
-          border: Border.all(color: Colors.blue[700]!),
-          borderRadius: BorderRadius.circular(12),
-        ),
+      backgroundColor: const Color(0xFFF8F4FA),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Icon(
-              icon,
-              size: 30,
-              color: selectedAmount == amount ? Colors.white : Colors.blue[700],
+            // Ikon air di tengah
+            Container(
+              width: 150,
+              height: 150,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.blue[300],
+                border: Border.all(color: Colors.blue[700]!, width: 2),
+              ),
+              child: Center(
+                child: Container(
+                  width: 90,
+                  height: 90,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.blue[700],
+                    border: Border.all(color: Colors.white, width: 5),
+                  ),
+                  child: const Icon(Icons.water_drop, color: Colors.white, size: 50),
+                ),
+              ),
             ),
-            const SizedBox(height: 5),
-            Text(
-              amount,
-              style: TextStyle(
-                fontSize: 16,
-                color:
-                    selectedAmount == amount ? Colors.white : Colors.blue[700],
+            const SizedBox(height: 30),
+
+            // Grafik kelembapan tanah
+            FutureBuilder<List<SensorData>>(
+              future: sensorFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox(height: 150, child: Center(child: CircularProgressIndicator()));
+                } else if (snapshot.hasError) {
+                  return SizedBox(height: 150, child: Center(child: Text('Error: ${snapshot.error}')));
+                }
+
+                final data = snapshot.data ?? [];
+                final chartData = data.asMap().entries.map(
+                  (entry) => FlSpot(entry.key.toDouble(), entry.value.averageSoilMoisture),
+                ).toList();
+
+                if (chartData.isEmpty) {
+                  return const SizedBox(height: 150, child: Center(child: Text("Tidak ada data yang tersedia")));
+                }
+
+                return Container(
+                  height: 150,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.blue[900],
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  padding: const EdgeInsets.all(12),
+                  child: LineChart(
+                    LineChartData(
+                      gridData: FlGridData(show: true),
+                      titlesData: FlTitlesData(show: false),
+                      borderData: FlBorderData(show: false),
+                      minX: 0,
+                      maxX: chartData.length.toDouble() - 1,
+                      minY: 0,
+                      maxY: 100,
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: chartData,
+                          isCurved: true,
+                          color: Colors.lightBlueAccent,
+                          dotData: FlDotData(show: false),
+                          belowBarData: BarAreaData(show: false),
+                          barWidth: 3,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+
+            const SizedBox(height: 16),
+
+            // Volume air keluar dari backend
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
+              decoration: BoxDecoration(
+                color: Colors.blue[100],
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.opacity, color: Colors.blue),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Volume Air Keluar: ',
+                    style: TextStyle(fontSize: 16, color: Colors.blue[800], fontWeight: FontWeight.w600),
+                  ),
+                  Text(
+                    '${waterVolume.toStringAsFixed(2)} L',
+                    style: TextStyle(fontSize: 16, color: Colors.blue[900], fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 30),
+
+            // Tombol ON dan OTOMATIS
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.blue[700],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: toggleManual,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        decoration: BoxDecoration(
+                          color: isOn ? Colors.lightBlue[100] : Colors.blue[300],
+                          borderRadius: const BorderRadius.only(topLeft: Radius.circular(12), bottomLeft: Radius.circular(12)),
+                        ),
+                        child: Center(
+                          child: Text(
+                            isOn ? 'OFF' : 'ON',
+                            style: TextStyle(color: isOn ? Colors.blue[700] : Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: toggleAuto,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        decoration: BoxDecoration(
+                          color: isAuto ? Colors.lightBlue[100] : Colors.blue[50],
+                          borderRadius: const BorderRadius.only(topRight: Radius.circular(12), bottomRight: Radius.circular(12)),
+                        ),
+                        child: Center(
+                          child: Text(
+                            isAuto ? 'OTOMATIS ON' : 'OTOMATIS OFF',
+                            style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

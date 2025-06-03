@@ -28,10 +28,16 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  syncfusion_flutter_charts: ^19.1.69 
   shared_preferences: ^2.2.2
   flutter:
     sdk: flutter
   http: ^0.13.6
+  flutter_dotenv: ^5.0.2
+  connectivity_plus: ^4.0.1
+  # wifi_info_flutter: ^2.0.2
+  network_info_plus: ^4.0.1
+
   
 
   # The following adds the Cupertino Icons font to your application.

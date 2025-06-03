@@ -5,17 +5,18 @@ class AuthService {
   static const _tokenKey = 'auth_token';
 
   // Register User
-  static Future<void> register({
+  static Future<Map<String, dynamic>> register({
     required String email,
     required String password,
-    required String role,
   }) async {
-    await ApiClient.post('/api/auth/register', {
+    final response = await ApiClient.post('/api/auth/register', {
       'email': email,
       'password': password,
-      'role': role,
     });
+
+    return response; // ini Map berisi: message, success, dll
   }
+
 
   // Login User
   static Future<void> login({

@@ -1,28 +1,61 @@
 class SensorData {
+  final DateTime timestamp;
   final DateTime time;
-  final double ph;
-  final double kelembabanTanah;
-  final double kelembabanUdara;
-  final double suhu;
-  final double cahaya;
+  final double? phSensor;
+  final double? pHNano;
+  final double? soilMoisture1;  
+  final double? soilMoisture2;
+  final double? nanoMoisture1;
+  final double? nanoMoisture2;
+  final double? nanoMoisture3;
+  final double? humidity;
+  final double? temperature;
+  final double? lux;
+  final double? flowRate;
 
   SensorData({
-    required this.time,
-    required this.ph,
-    required this.kelembabanTanah,
-    required this.kelembabanUdara,
-    required this.suhu,
-    required this.cahaya,
+    required this.timestamp,
+    required this.time, 
+    this.phSensor,
+    this.pHNano,
+    this.soilMoisture1,
+    this.soilMoisture2,
+    this.nanoMoisture1,
+    this.nanoMoisture2,
+    this.nanoMoisture3,
+    this.humidity,
+    this.temperature,
+    this.lux,
+    this.flowRate,
   });
+
+  double get averageSoilMoisture {
+    final moistures = [
+      soilMoisture1,
+      soilMoisture2,
+      nanoMoisture1,
+      nanoMoisture2,
+      nanoMoisture3,
+    ].where((v) => v != null).cast<double>();
+    if (moistures.isEmpty) return 0.0;
+    return moistures.reduce((a, b) => a + b) / moistures.length;
+  }
 
   factory SensorData.fromJson(Map<String, dynamic> json) {
     return SensorData(
+      timestamp: DateTime.parse(json['_time'] ?? json['timestamp']),
       time: DateTime.parse(json['_time']),
-      ph: (json['ph'] ?? 0).toDouble(),
-      kelembabanTanah: (json['kelembaban_tanah'] ?? 0).toDouble(),
-      kelembabanUdara: (json['kelembaban_udara'] ?? 0).toDouble(),
-      suhu: (json['suhu'] ?? 0).toDouble(),
-      cahaya: (json['cahaya'] ?? 0).toDouble(),
+      phSensor: json['ph_sensor'] != null ? (json['ph_sensor'] as num).toDouble() : null,
+      pHNano: json['pH_nano'] != null ? (json['pH_nano'] as num).toDouble() : null,
+      soilMoisture1: json['soil_moisture_1'] != null ? (json['soil_moisture_1'] as num).toDouble() : null,
+      soilMoisture2: json['soil_moisture_2'] != null ? (json['soil_moisture_2'] as num).toDouble() : null,
+      nanoMoisture1: json['nano_moisture_1'] != null ? (json['nano_moisture_1'] as num).toDouble() : null,
+      nanoMoisture2: json['nano_moisture_2'] != null ? (json['nano_moisture_2'] as num).toDouble() : null,
+      nanoMoisture3: json['nano_moisture_3'] != null ? (json['nano_moisture_3'] as num).toDouble() : null,
+      humidity: json['humidity'] != null ? (json['humidity'] as num).toDouble() : null,
+      temperature: json['temperature'] != null ? (json['temperature'] as num).toDouble() : null,
+      lux: json['lux'] != null ? (json['lux'] as num).toDouble() : null,
+      flowRate: json['flow_rate'] != null ? (json['flow_rate'] as num).toDouble() : null,
     );
   }
 }

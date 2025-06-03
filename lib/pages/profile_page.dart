@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'login_page.dart';
+import 'package:smartfarmingpakcoy_apps/api/api_client.dart';
+import 'package:smartfarmingpakcoy_apps/pages/login_page.dart';
+import 'package:smartfarmingpakcoy_apps/pages/home_page.dart';  // Import home page
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -10,9 +11,8 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  String nama = "";
-  String role = "";
-  String lokasi = "";
+  String email = "";
+  String lokasiLahan = "";
   String jenisTanaman = "";
   String luasLahan = "";
   String lamaPanen = "";
@@ -20,94 +20,130 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    _loadUserData();
+    fetchProfile();
   }
 
-  Future<void> _loadUserData() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      nama = prefs.getString('nama') ?? 'Nama Farrel';
-      role = prefs.getString('role') ?? 'Petani';
-      lokasi = prefs.getString('lokasi') ?? 'Belum diatur';
-      jenisTanaman = prefs.getString('jenisTanaman') ?? 'Pakcoy';
-      luasLahan = prefs.getString('luasLahan') ?? '2 Hektar';
-      lamaPanen = prefs.getString('lamaPanen') ?? '3 Bulan';
-    });
+  Future<void> fetchProfile() async {
+    try {
+      final data = await ApiClient.getUserProfile();
+
+      print('PROFILE: $data');
+      print('EMAIL SET: ${data['email']}');
+
+      setState(() {
+        email = data['email'] ?? '';
+        lokasiLahan = data['lokasiLahan'] ?? 'Belum diatur';
+        jenisTanaman = data['jenisTanaman'] ?? 'Belum diatur';
+        luasLahan = data['luasLahan'] ?? 'Belum diatur';
+        lamaPanen = data['lamaPanen'] ?? 'Belum diatur';
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal memuat profil: $e')),
+      );
+    }
+  }
+
+  void editProfileDialog() {
+    final lokasiController = TextEditingController(text: lokasiLahan);
+    final jenisController = TextEditingController(text: jenisTanaman);
+    final luasController = TextEditingController(text: luasLahan);
+    final panenController = TextEditingController(text: lamaPanen);
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Edit Informasi Lahan'),
+        content: SingleChildScrollView(
+          child: Column(
+            children: [
+              TextField(controller: lokasiController, decoration: const InputDecoration(labelText: 'Lokasi Lahan')),
+              TextField(controller: jenisController, decoration: const InputDecoration(labelText: 'Jenis Tanaman')),
+              TextField(controller: luasController, decoration: const InputDecoration(labelText: 'Luas Lahan')),
+              TextField(controller: panenController, decoration: const InputDecoration(labelText: 'Lama Panen')),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final success = await ApiClient.updateUserProfile(
+                lokasiLahan: lokasiController.text,
+                jenisTanaman: jenisController.text,
+                luasLahan: luasController.text,
+                lamaPanen: panenController.text,
+              );
+              if (success) {
+                await fetchProfile();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Profil berhasil diperbarui')),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Gagal memperbarui profil')),
+                );
+              }
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginPage()),
-    );
+    await ApiClient.logout();
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginPage()));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Profil Pengguna'),
+        backgroundColor: Colors.teal,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const HomePage()));
+          },
+        ),
+        actions: [
+          IconButton(icon: const Icon(Icons.edit), onPressed: editProfileDialog),
+        ],
+      ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  const CircleAvatar(
-                    radius: 40,
-                    backgroundColor: Colors.teal,
-                    child: Icon(Icons.person, size: 40, color: Colors.white),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Text(
-                      nama,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
+              const CircleAvatar(
+                radius: 40,
+                backgroundColor: Colors.teal,
+                child: Icon(Icons.person, size: 40, color: Colors.white),
               ),
-              const SizedBox(height: 20),
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.teal.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    role,
-                    style: const TextStyle(
-                      color: Colors.teal,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
+              const SizedBox(height: 10),
+              Text(email, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               const SizedBox(height: 30),
+
               _buildInfoSection("Informasi Lahan", [
-                _buildInfoRow(Icons.location_on, "Lokasi Lahan : $lokasi"),
-                _buildInfoRow(
-                  Icons.local_florist,
-                  "Jenis Tanaman : $jenisTanaman",
-                ),
-                _buildInfoRow(Icons.crop_square, "Luas Lahan : $luasLahan"),
-                _buildInfoRow(Icons.timer, "Lama Panen : $lamaPanen"),
+                _buildInfoRow(Icons.location_on, "Lokasi Lahan: $lokasiLahan"),
+                _buildInfoRow(Icons.local_florist, "Jenis Tanaman: $jenisTanaman"),
+                _buildInfoRow(Icons.square_foot, "Luas Lahan: $luasLahan"),
+                _buildInfoRow(Icons.timer, "Lama Panen: $lamaPanen"),
               ]),
+
               const SizedBox(height: 20),
+
               _buildInfoSection("Lainnya", [
                 _buildInfoRow(Icons.email, "Contact Us"),
                 _buildInfoRow(Icons.privacy_tip, "Privacy Policy"),
               ]),
+
               const Spacer(),
+
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -116,7 +152,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   label: const Text("Keluar"),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.redAccent,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
               ),
@@ -131,12 +168,11 @@ class _ProfilePageState extends State<ProfilePage> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -151,7 +187,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildInfoRow(IconData icon, String text) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
           Icon(icon, size: 20, color: Colors.teal),

@@ -62,31 +62,9 @@ class WelcomePage extends StatelessWidget {
                     'Selamat Datang',
                     style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 36),  // Tambah spacing supaya proporsional
 
-                  // Tombol Google
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      icon: Image.asset('assets/images/google.png', height: 24),
-                      label: const Text(
-                        'Lanjutkan dengan Google',
-                        style: TextStyle(color: Colors.black),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      onPressed: () {},
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Tombol Buat Akun
+                  // Tombol Buat Akun (jadi tombol utama sekarang)
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
