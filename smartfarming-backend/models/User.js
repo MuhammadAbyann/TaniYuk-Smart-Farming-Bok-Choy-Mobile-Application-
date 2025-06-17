@@ -25,7 +25,13 @@ const userSchema = new mongoose.Schema({
   lamaPanen: {
     type: String,
     default: ''
-  }
+  },
+  role: {
+  type: String,
+  enum: ['user', 'admin'],
+  default: 'user'
+}
+
 });
 
 module.exports = mongoose.model('User', userSchema);

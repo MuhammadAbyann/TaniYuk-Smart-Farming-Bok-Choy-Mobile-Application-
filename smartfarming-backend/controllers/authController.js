@@ -16,8 +16,11 @@ exports.register = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Simpan user
-    const user = new User({ email, password: hashedPassword });
+    const user = new User({ 
+      email, 
+      password: hashedPassword,
+      role: 'user'
+    });
     await user.save();
 
     res.status(201).json({ message: 'User berhasil terdaftar' });
@@ -43,13 +46,15 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: 'Password salah' });
     }
 
+    // Buat token dengan payload termasuk role
     const token = jwt.sign(
-      { userId: user._id },
+      { userId: user._id, role: user.role }, // role dimasukkan ke dalam token
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
     );
 
-    res.json({ token });
+    // Kirim token dan role ke frontend
+    res.json({ token, role: user.role });
   } catch (error) {
     console.error('Login Error:', error);
     res.status(500).json({ message: 'Terjadi kesalahan saat login' });

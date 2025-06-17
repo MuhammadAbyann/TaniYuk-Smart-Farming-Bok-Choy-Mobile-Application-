@@ -21,10 +21,13 @@ app.use(morgan('dev'));
 // Routes
 const authRoutes = require('./routes/authRoutes');
 const sensorRoutes = require('./routes/sensorRoutes');
+const adminRoutes = require('./routes/admin');
 
+app.use('/api/admin', adminRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/sensor', sensorRoutes);
 app.use('/api/user', require('./routes/user'));
+
 
 
 // Root

@@ -2,8 +2,8 @@ import 'package:smartfarmingpakcoy_apps/api/api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
-  static const _tokenKey = 'token'; // biar sinkron dengan semua file lain
-
+  static const _tokenKey = 'token';
+  static const _roleKey = 'role';
 
   // Register User
   static Future<Map<String, dynamic>> register({
@@ -29,9 +29,16 @@ class AuthService {
     });
 
     final token = response['token'];
+    final role = response['user']?['role']; // ambil dari user.role
+
     if (token != null && token is String) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_tokenKey, token);
+
+      if (role != null && role is String) {
+        await prefs.setString(_roleKey, role);
+      }
+
       return token;
     } else {
       throw Exception('Token tidak ditemukan saat login');
@@ -42,6 +49,7 @@ class AuthService {
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
+    await prefs.remove(_roleKey);
   }
 
   // Cek apakah user sudah login
@@ -54,6 +62,12 @@ class AuthService {
   static Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_tokenKey);
+  }
+
+  // Ambil role yang disimpan
+  static Future<String?> getRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_roleKey);
   }
 
   // Dummy forgot password

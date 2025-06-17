@@ -134,4 +134,23 @@ class ApiClient {
     final jsonMap = json.decode(response.body);
     return SensorData.fromJson(jsonMap);
   }
+
+  static Future<dynamic> put(String endpoint, Map<String, dynamic> body) async {
+  final headers = await _authHeaders();
+  final response = await http.put(
+    Uri.parse('$_baseUrl$endpoint'),
+    headers: headers,
+    body: json.encode(body),
+  );
+  return _processResponse(response);
+  }
+
+  static Future<dynamic> delete(String endpoint) async {
+    final headers = await _authHeaders();
+    final response = await http.delete(Uri.parse('$_baseUrl$endpoint'), headers: headers);
+    return _processResponse(response);
+  }
+
+
 }
+
