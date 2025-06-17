@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:smartfarmingpakcoy_apps/pages/home_page.dart';
 import 'package:smartfarmingpakcoy_apps/pages/offline_control_page.dart';
-import 'package:smartfarmingpakcoy_apps/pages/admin_dashboard_page.dart'; // 🆕 import halaman admin
-import 'package:smartfarmingpakcoy_apps/services/auth_service.dart';
-import 'package:smartfarmingpakcoy_apps/api/api_client.dart';
+import 'package:smartfarmingpakcoy_apps/pages/admin_dashboard_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -20,7 +19,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   bool? isOfflineMode;
   bool isChecking = false;
-  Widget? nextPage; // 🆕 Halaman tujuan (admin/home)
+  Widget? startPage;
 
   @override
   void initState() {
@@ -33,10 +32,8 @@ class _MyAppState extends State<MyApp> {
       isChecking = true;
     });
 
-    const espUrl = 'http://192.168.4.1/';
-
     try {
-      final response = await http.get(Uri.parse(espUrl)).timeout(const Duration(seconds: 3));
+      final response = await http.get(Uri.parse('http://192.168.4.1/')).timeout(const Duration(seconds: 3));
       if (response.statusCode == 200 && response.body.contains("Kontrol Manual Relay")) {
         setState(() {
           isOfflineMode = true;
@@ -46,30 +43,12 @@ class _MyAppState extends State<MyApp> {
       }
     } catch (_) {}
 
-    // ONLINE MODE
+    final prefs = await SharedPreferences.getInstance();
+    final role = prefs.getString('role') ?? 'user';
     setState(() {
       isOfflineMode = false;
-    });
-
-    // 🆕 Ambil token dan cek role user
-    try {
-      final token = await AuthService.getToken();
-      if (token == null) {
-        nextPage = const HomePage(); // fallback kalau belum login
-      } else {
-        final user = await ApiClient.getUserProfile();
-        if (user.role == 'admin') {
-          nextPage = const AdminDashboardPage(); // ⬅️ masuk admin
-        } else {
-          nextPage = const HomePage(); // ⬅️ masuk user biasa
-        }
-      }
-    } catch (e) {
-      nextPage = const HomePage(); // fallback jika error
-    }
-
-    setState(() {
       isChecking = false;
+      startPage = (role == 'admin') ? const AdminDashboardPage() : const HomePage();
     });
   }
 
@@ -82,7 +61,7 @@ class _MyAppState extends State<MyApp> {
           ? const Scaffold(body: Center(child: CircularProgressIndicator()))
           : isOfflineMode!
               ? const OfflineControlPage()
-              : nextPage ?? const HomePage(), // 🆕 arahkan sesuai role
+              : startPage ?? const HomePage(),
     );
   }
 }

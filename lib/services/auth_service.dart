@@ -20,30 +20,29 @@ class AuthService {
 
   // Login User
   static Future<String> login({
-    required String email,
-    required String password,
-  }) async {
-    final response = await ApiClient.post('/api/auth/login', {
-      'email': email,
-      'password': password,
-    });
+  required String email,
+  required String password,
+}) async {
+  final response = await ApiClient.post('/api/auth/login', {
+    'email': email,
+    'password': password,
+  });
 
-    final token = response['token'];
-    final role = response['user']?['role']; // ambil dari user.role
+  final token = response['token'];
+  if (token != null && token is String) {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_tokenKey, token);
 
-    if (token != null && token is String) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_tokenKey, token);
+    // Ambil profile dan simpan role
+    final user = await ApiClient.getUserProfile();
+    await prefs.setString('role', user.role ?? 'user'); // ⬅️ Simpan role
 
-      if (role != null && role is String) {
-        await prefs.setString(_roleKey, role);
-      }
-
-      return token;
-    } else {
-      throw Exception('Token tidak ditemukan saat login');
-    }
+    return token;
+  } else {
+    throw Exception('Token tidak ditemukan saat login');
   }
+}
+
 
   // Logout User
   static Future<void> logout() async {
