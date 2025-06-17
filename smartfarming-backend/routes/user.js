@@ -11,6 +11,7 @@ router.get('/profile', authMiddleware, async (req, res) => {
 
     res.json({
       email: user.email || '',
+      role: user.role,
       lokasiLahan: user.lokasiLahan || 'Belum diatur',
       jenisTanaman: user.jenisTanaman || 'Belum diatur',
       luasLahan: user.luasLahan || 'Belum diatur',
