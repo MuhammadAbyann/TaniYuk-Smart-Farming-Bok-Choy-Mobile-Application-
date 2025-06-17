@@ -1,5 +1,6 @@
 class User {
   final String email;
+  final String? role;
   final String? lokasiLahan;
   final String? jenisTanaman;
   final String? luasLahan;
@@ -7,6 +8,7 @@ class User {
 
   User({
     required this.email,
+    this.role,
     this.lokasiLahan,
     this.jenisTanaman,
     this.luasLahan,
@@ -15,6 +17,7 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) => User(
         email: json['email'] ?? '',
+        role: json['role'],
         lokasiLahan: json['lokasiLahan'],
         jenisTanaman: json['jenisTanaman'],
         luasLahan: json['luasLahan'],
