@@ -14,61 +14,36 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  bool rememberMe = false;
 
-  @override
-  void initState() {
-    super.initState();
-    loadSavedCredentials();
-  }
+  Future<void> _login() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
 
-  Future<void> loadSavedCredentials() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      emailController.text = prefs.getString('saved_email') ?? '';
-      passwordController.text = prefs.getString('saved_password') ?? '';
-      rememberMe = prefs.getBool('remember_me') ?? false;
-    });
-  }
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("Email dan password tidak boleh kosong")));
+      return;
+    }
 
-  Future<void> saveCredentials() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (rememberMe) {
-      await prefs.setString('saved_email', emailController.text);
-      await prefs.setString('saved_password', passwordController.text);
-      await prefs.setBool('remember_me', true);
-    } else {
-      await prefs.remove('saved_email');
-      await prefs.remove('saved_password');
-      await prefs.setBool('remember_me', false);
+    try {
+      // Login ke server
+      final token = await AuthService.login(email: email, password: password);
+
+      // Simpan token ke SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      // await prefs.setString('token', token);
+
+      // Navigasi ke halaman Home
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomePage()),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Login gagal: $e')),
+      );
     }
   }
-
- void _login() async {
-  final email = emailController.text.trim();
-  final password = passwordController.text.trim();
-
-  if (email.isEmpty || password.isEmpty) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text("Email dan password tidak boleh kosong")));
-    return;
-  }
-
-  try {
-    final result = await AuthService.login(email: email, password: password);
-
-    // Kalau login sukses
-    await saveCredentials(); // Remember me
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const HomePage()),
-    );
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Login gagal: $e')),
-    );
-  }
-}
 
   void _forgotPassword() {
     showDialog(
@@ -109,7 +84,7 @@ class _LoginPageState extends State<LoginPage> {
                       "Selamat Datang Kembali!",
                       style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                     ),
-                    const Text("Silahkan login ke akunmu"),
+                    const Text("Silakan login ke akunmu"),
                     const SizedBox(height: 20),
                     TextField(
                       controller: emailController,
@@ -127,27 +102,12 @@ class _LoginPageState extends State<LoginPage> {
                         border: OutlineInputBorder(),
                       ),
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Checkbox(
-                              value: rememberMe,
-                              onChanged: (val) {
-                                setState(() {
-                                  rememberMe = val!;
-                                });
-                              },
-                            ),
-                            const Text("Remember me"),
-                          ],
-                        ),
-                        TextButton(
-                          onPressed: _forgotPassword,
-                          child: const Text("Lupa Password"),
-                        ),
-                      ],
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: _forgotPassword,
+                        child: const Text("Lupa Password"),
+                      ),
                     ),
                     const SizedBox(height: 20),
                     ElevatedButton(
@@ -162,7 +122,7 @@ class _LoginPageState extends State<LoginPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text("Don’t have an account?"),
+                        const Text("Belum punya akun?"),
                         TextButton(
                           onPressed: () {
                             Navigator.push(
@@ -170,7 +130,7 @@ class _LoginPageState extends State<LoginPage> {
                               MaterialPageRoute(builder: (context) => const RegisterPage()),
                             );
                           },
-                          child: const Text("Sign up"),
+                          child: const Text("Daftar"),
                         ),
                       ],
                     ),

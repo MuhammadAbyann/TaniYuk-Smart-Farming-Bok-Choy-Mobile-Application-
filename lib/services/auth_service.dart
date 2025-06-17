@@ -2,7 +2,8 @@ import 'package:smartfarmingpakcoy_apps/api/api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
-  static const _tokenKey = 'auth_token';
+  static const _tokenKey = 'token'; // biar sinkron dengan semua file lain
+
 
   // Register User
   static Future<Map<String, dynamic>> register({
@@ -14,12 +15,11 @@ class AuthService {
       'password': password,
     });
 
-    return response; // ini Map berisi: message, success, dll
+    return response;
   }
 
-
   // Login User
-  static Future<void> login({
+  static Future<String> login({
     required String email,
     required String password,
   }) async {
@@ -29,9 +29,10 @@ class AuthService {
     });
 
     final token = response['token'];
-    if (token != null) {
+    if (token != null && token is String) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_tokenKey, token);
+      return token;
     } else {
       throw Exception('Token tidak ditemukan saat login');
     }
@@ -55,7 +56,7 @@ class AuthService {
     return prefs.getString(_tokenKey);
   }
 
-  // (Optional) Forgot Password (dummy)
+  // Dummy forgot password
   static Future<void> forgotPassword(String email) async {
     await Future.delayed(const Duration(seconds: 1));
   }

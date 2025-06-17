@@ -23,27 +23,39 @@ class _FertilizerControlPageState extends State<FertilizerControlPage> {
   }
 
   Future<void> sendManualCommand(bool turnOn) async {
-    final url = Uri.parse("http://192.168.4.1/manual_pupuk?status=${turnOn ? 'on' : 'off'}");
+    final url = Uri.parse("http://192.168.4.1/fertilizing/${turnOn ? 'on' : 'off'}");
     try {
       final response = await http.get(url);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Manual: ${response.body}')),
-      );
-    } catch (_) {
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Manual: ${response.body}')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal manual: ${response.statusCode}')),
+        );
+      }
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Gagal mengirim perintah manual')),
       );
     }
   }
 
-  Future<void> sendAutoCommand(bool turnOn) async {
-    final url = Uri.parse("http://192.168.4.1/auto_pupuk?status=${turnOn ? 'on' : 'off'}");
+  Future<void> sendAutoCommand() async {
+    final url = Uri.parse("http://192.168.4.1/fertilizing/auto");
     try {
       final response = await http.get(url);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Otomatis: ${response.body}')),
-      );
-    } catch (_) {
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Otomatis: ${response.body}')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal auto: ${response.statusCode}')),
+        );
+      }
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Gagal mengirim perintah otomatis')),
       );
@@ -60,10 +72,10 @@ class _FertilizerControlPageState extends State<FertilizerControlPage> {
 
   void toggleAuto() async {
     setState(() {
-      isAuto = !isAuto;
+      isAuto = true;
       isOn = false;
     });
-    await sendAutoCommand(isAuto);
+    await sendAutoCommand();
   }
 
   @override
@@ -108,59 +120,50 @@ class _FertilizerControlPageState extends State<FertilizerControlPage> {
               future: sensorFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SizedBox(
-                    height: 150,
-                    child: Center(child: CircularProgressIndicator()),
-                  );
+                  return const SizedBox(height: 150, child: Center(child: CircularProgressIndicator()));
                 } else if (snapshot.hasError) {
-                  return SizedBox(
-                    height: 150,
-                    child: Center(child: Text('Error: ${snapshot.error}')),
-                  );
-                } else {
-                  final data = snapshot.data ?? [];
-                  final chartData = data.asMap().entries.map(
-                    (entry) => FlSpot(entry.key.toDouble(), entry.value.phSensor ?? 0),
-                  ).toList();
-
-                  if (chartData.isEmpty) {
-                    return const SizedBox(
-                      height: 150,
-                      child: Center(child: Text("Tidak ada data yang tersedia")),
-                    );
-                  }
-
-                  return Container(
-                    height: 150,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.green[900],
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    padding: const EdgeInsets.all(12),
-                    child: LineChart(
-                      LineChartData(
-                        gridData: FlGridData(show: true),
-                        titlesData: FlTitlesData(show: false),
-                        borderData: FlBorderData(show: false),
-                        minX: 0,
-                        maxX: chartData.length.toDouble() - 1,
-                        minY: 0,
-                        maxY: 14,
-                        lineBarsData: [
-                          LineChartBarData(
-                            spots: chartData,
-                            isCurved: true,
-                            color: Colors.lightGreenAccent,
-                            barWidth: 3,
-                            dotData: FlDotData(show: false),
-                            belowBarData: BarAreaData(show: false),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
+                  return SizedBox(height: 150, child: Center(child: Text('Error: ${snapshot.error}')));
                 }
+
+                final data = snapshot.data ?? [];
+                final chartData = data.asMap().entries.map(
+                  (entry) => FlSpot(entry.key.toDouble(), entry.value.phSensor ?? 0),
+                ).toList();
+
+                if (chartData.isEmpty) {
+                  return const SizedBox(height: 150, child: Center(child: Text("Tidak ada data yang tersedia")));
+                }
+
+                return Container(
+                  height: 150,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.green[900],
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  padding: const EdgeInsets.all(12),
+                  child: LineChart(
+                    LineChartData(
+                      gridData: FlGridData(show: true),
+                      titlesData: FlTitlesData(show: false),
+                      borderData: FlBorderData(show: false),
+                      minX: 0,
+                      maxX: chartData.length.toDouble() - 1,
+                      minY: 0,
+                      maxY: 14,
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: chartData,
+                          isCurved: true,
+                          color: Colors.lightGreenAccent,
+                          barWidth: 3,
+                          dotData: FlDotData(show: false),
+                          belowBarData: BarAreaData(show: false),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
               },
             ),
             const SizedBox(height: 30),
@@ -178,10 +181,7 @@ class _FertilizerControlPageState extends State<FertilizerControlPage> {
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         decoration: BoxDecoration(
                           color: isOn ? Colors.green[100] : Colors.green[300],
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(12),
-                            bottomLeft: Radius.circular(12),
-                          ),
+                          borderRadius: const BorderRadius.only(topLeft: Radius.circular(12), bottomLeft: Radius.circular(12)),
                         ),
                         child: Center(
                           child: Text(
@@ -203,16 +203,13 @@ class _FertilizerControlPageState extends State<FertilizerControlPage> {
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         decoration: BoxDecoration(
                           color: isAuto ? Colors.green[100] : Colors.green[50],
-                          borderRadius: const BorderRadius.only(
-                            topRight: Radius.circular(12),
-                            bottomRight: Radius.circular(12),
-                          ),
+                          borderRadius: const BorderRadius.only(topRight: Radius.circular(12), bottomRight: Radius.circular(12)),
                         ),
                         child: Center(
                           child: Text(
                             isAuto ? 'OTOMATIS ON' : 'OTOMATIS OFF',
-                            style: TextStyle(
-                              color: Colors.green[800],
+                            style: const TextStyle(
+                              color: Colors.green,
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                             ),

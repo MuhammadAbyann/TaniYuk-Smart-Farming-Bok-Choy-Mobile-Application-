@@ -23,7 +23,7 @@ class _WateringControlPageState extends State<WateringControlPage> {
   void initState() {
     super.initState();
     sensorFuture = ApiClient.getDailySensorData();
-    fetchWaterVolume(); // Load initial volume
+    fetchWaterVolume();
   }
 
   Future<void> fetchWaterVolume() async {
@@ -41,24 +41,32 @@ class _WateringControlPageState extends State<WateringControlPage> {
   }
 
   Future<void> sendManualCommand(bool turnOn) async {
-    final url = Uri.parse('http://192.168.4.1/manual?status=${turnOn ? 'on' : 'off'}');
+    final url = Uri.parse('http://192.168.4.1/watering/${turnOn ? 'on' : 'off'}');
     try {
       final response = await http.get(url);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Manual: ${response.body}')));
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Manual: ${response.body}')));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal manual: ${response.statusCode}')));
+      }
       await fetchWaterVolume();
-    } catch (_) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal mengirim perintah manual')));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
-  Future<void> sendAutoCommand(bool turnOn) async {
-    final url = Uri.parse('http://192.168.4.1/auto?status=${turnOn ? 'on' : 'off'}');
+  Future<void> sendAutoCommand() async {
+    final url = Uri.parse('http://192.168.4.1/watering/auto');
     try {
       final response = await http.get(url);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Otomatis: ${response.body}')));
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Otomatis: ${response.body}')));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal auto: ${response.statusCode}')));
+      }
       await fetchWaterVolume();
-    } catch (_) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal mengirim perintah otomatis')));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
@@ -72,10 +80,10 @@ class _WateringControlPageState extends State<WateringControlPage> {
 
   void toggleAuto() {
     setState(() {
-      isAuto = !isAuto;
+      isAuto = true;
       isOn = false;
     });
-    sendAutoCommand(isAuto);
+    sendAutoCommand();
   }
 
   @override
@@ -94,7 +102,6 @@ class _WateringControlPageState extends State<WateringControlPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // Ikon air di tengah
             Container(
               width: 150,
               height: 150,
@@ -117,8 +124,6 @@ class _WateringControlPageState extends State<WateringControlPage> {
               ),
             ),
             const SizedBox(height: 30),
-
-            // Grafik kelembapan tanah
             FutureBuilder<List<SensorData>>(
               future: sensorFuture,
               builder: (context, snapshot) {
@@ -169,10 +174,7 @@ class _WateringControlPageState extends State<WateringControlPage> {
                 );
               },
             ),
-
             const SizedBox(height: 16),
-
-            // Volume air keluar dari backend
             Container(
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
               decoration: BoxDecoration(
@@ -195,10 +197,7 @@ class _WateringControlPageState extends State<WateringControlPage> {
                 ],
               ),
             ),
-
             const SizedBox(height: 30),
-
-            // Tombol ON dan OTOMATIS
             Container(
               decoration: BoxDecoration(
                 color: Colors.blue[700],

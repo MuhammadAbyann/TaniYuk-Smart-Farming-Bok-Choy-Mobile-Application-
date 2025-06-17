@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:smartfarmingpakcoy_apps/api/api_client.dart';
 import 'package:smartfarmingpakcoy_apps/pages/login_page.dart';
-import 'package:smartfarmingpakcoy_apps/pages/home_page.dart';  // Import home page
+import 'package:smartfarmingpakcoy_apps/pages/home_page.dart';
+import 'package:smartfarmingpakcoy_apps/services/auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:smartfarmingpakcoy_apps/models/user.dart';
+
+
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -17,25 +22,38 @@ class _ProfilePageState extends State<ProfilePage> {
   String luasLahan = "";
   String lamaPanen = "";
 
+  String token = "";
+
   @override
   void initState() {
     super.initState();
+    fetchTokenAndProfile();
+  }
+
+  Future<void> fetchTokenAndProfile() async {
+    final token = await AuthService.getToken() ?? '';
+
+    if (token.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Token tidak ditemukan. Silakan login ulang.')),
+      );
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginPage()));
+      return;
+    }
+
     fetchProfile();
   }
 
   Future<void> fetchProfile() async {
     try {
-      final data = await ApiClient.getUserProfile();
-
-      print('PROFILE: $data');
-      print('EMAIL SET: ${data['email']}');
+      final data = await ApiClient.getUserProfile(token);
 
       setState(() {
-        email = data['email'] ?? '';
-        lokasiLahan = data['lokasiLahan'] ?? 'Belum diatur';
-        jenisTanaman = data['jenisTanaman'] ?? 'Belum diatur';
-        luasLahan = data['luasLahan'] ?? 'Belum diatur';
-        lamaPanen = data['lamaPanen'] ?? 'Belum diatur';
+        email = data.email;
+        lokasiLahan = data.lokasiLahan ?? '';
+        jenisTanaman = data.jenisTanaman ?? '';
+        luasLahan = data.luasLahan ?? '';
+        lamaPanen = data.lamaPanen ?? '';
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -70,10 +88,14 @@ class _ProfilePageState extends State<ProfilePage> {
             onPressed: () async {
               Navigator.pop(context);
               final success = await ApiClient.updateUserProfile(
-                lokasiLahan: lokasiController.text,
-                jenisTanaman: jenisController.text,
-                luasLahan: luasController.text,
-                lamaPanen: panenController.text,
+                token: token,
+                user: User(
+                  email: email,
+                  lokasiLahan: lokasiController.text,
+                  jenisTanaman: jenisController.text,
+                  luasLahan: luasController.text,
+                  lamaPanen: panenController.text,
+                ),
               );
               if (success) {
                 await fetchProfile();
@@ -94,8 +116,9 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _logout() async {
-    await ApiClient.logout();
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginPage()));
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginPage()));
   }
 
   @override
