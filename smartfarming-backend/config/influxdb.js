@@ -13,4 +13,5 @@ writeApi.useDefaultTags({ source: 'pakcoy_device' });
 
 const queryApi = influxDB.getQueryApi(org);
 
+
 module.exports = { writeApi, queryApi, bucket, org };

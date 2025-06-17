@@ -8,7 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ApiClient {
   static const String _baseUrl = 'http://34.101.104.19:5000';
 
-  // Utility untuk membuat header Bearer token
+  // Utilitas header bearer
   static Future<Map<String, String>> _authHeaders() async {
     final token = await AuthService.getToken();
     print('[DEBUG] Token dari AuthService.getToken(): $token');
@@ -18,10 +18,9 @@ class ApiClient {
     };
   }
 
-  static Future<User> getUserProfile(String token) async {
+  static Future<User> getUserProfile() async {
     final url = Uri.parse('$_baseUrl/api/user/profile');
     final headers = await _authHeaders();
-    print('[DEBUG] Token di getUserProfile(): ${headers['Authorization']}');
     final response = await http.get(url, headers: headers);
 
     print('[GET PROFILE] Status Code: ${response.statusCode}');
@@ -34,10 +33,7 @@ class ApiClient {
     }
   }
 
-  static Future<bool> updateUserProfile({
-    required String token,
-    required User user,
-  }) async {
+  static Future<bool> updateUserProfile(User user) async {
     final url = Uri.parse('$_baseUrl/api/user/profile');
     final headers = await _authHeaders();
 
@@ -57,7 +53,7 @@ class ApiClient {
 
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('token'); // pastikan key token sesuai
+    await prefs.remove('token');
   }
 
   static Future<dynamic> get(String endpoint) async {

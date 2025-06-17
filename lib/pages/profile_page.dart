@@ -6,8 +6,6 @@ import 'package:smartfarmingpakcoy_apps/services/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smartfarmingpakcoy_apps/models/user.dart';
 
-
-
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -22,31 +20,16 @@ class _ProfilePageState extends State<ProfilePage> {
   String luasLahan = "";
   String lamaPanen = "";
 
-  String token = "";
-
   @override
   void initState() {
     super.initState();
-    fetchTokenAndProfile();
-  }
-
-  Future<void> fetchTokenAndProfile() async {
-    final token = await AuthService.getToken() ?? '';
-
-    if (token.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Token tidak ditemukan. Silakan login ulang.')),
-      );
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginPage()));
-      return;
-    }
-
     fetchProfile();
   }
 
   Future<void> fetchProfile() async {
+    print('[DEBUG] Masuk ke fetchProfile()');
     try {
-      final data = await ApiClient.getUserProfile(token);
+      final data = await ApiClient.getUserProfile();
 
       setState(() {
         email = data.email;
@@ -58,6 +41,11 @@ class _ProfilePageState extends State<ProfilePage> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Gagal memuat profil: $e')),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginPage()),
       );
     }
   }
@@ -87,9 +75,9 @@ class _ProfilePageState extends State<ProfilePage> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context);
+
               final success = await ApiClient.updateUserProfile(
-                token: token,
-                user: User(
+                User(
                   email: email,
                   lokasiLahan: lokasiController.text,
                   jenisTanaman: jenisController.text,
@@ -97,6 +85,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   lamaPanen: panenController.text,
                 ),
               );
+
               if (success) {
                 await fetchProfile();
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -116,8 +105,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('token');
+    await AuthService.logout();
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginPage()));
   }
 
