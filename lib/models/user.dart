@@ -17,10 +17,10 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) => User(
         email: json['email'] ?? '',
-        role: json['role'],
         lokasiLahan: json['lokasiLahan'],
         jenisTanaman: json['jenisTanaman'],
         luasLahan: json['luasLahan'],
         lamaPanen: json['lamaPanen'],
+        role: json['role'],
       );
 }

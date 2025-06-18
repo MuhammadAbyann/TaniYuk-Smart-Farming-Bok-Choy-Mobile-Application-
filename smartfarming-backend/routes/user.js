@@ -11,7 +11,7 @@ router.get('/profile', authMiddleware, async (req, res) => {
 
     res.json({
       email: user.email || '',
-      role: user.role,
+      role: user.role || 'user',
       lokasiLahan: user.lokasiLahan || 'Belum diatur',
       jenisTanaman: user.jenisTanaman || 'Belum diatur',
       luasLahan: user.luasLahan || 'Belum diatur',
@@ -28,10 +28,11 @@ router.put('/profile', authMiddleware, async (req, res) => {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    user.lokasiLahan = req.body.lokasiLahan || user.lokasiLahan;
-    user.jenisTanaman = req.body.jenisTanaman || user.jenisTanaman;
-    user.luasLahan = req.body.luasLahan || user.luasLahan;
-    user.lamaPanen = req.body.lamaPanen || user.lamaPanen;
+    // Update hanya field yang boleh
+    if (req.body.lokasiLahan !== undefined) user.lokasiLahan = req.body.lokasiLahan;
+    if (req.body.jenisTanaman !== undefined) user.jenisTanaman = req.body.jenisTanaman;
+    if (req.body.luasLahan !== undefined) user.luasLahan = req.body.luasLahan;
+    if (req.body.lamaPanen !== undefined) user.lamaPanen = req.body.lamaPanen;
 
     await user.save();
     res.json({ message: 'Profile updated successfully' });

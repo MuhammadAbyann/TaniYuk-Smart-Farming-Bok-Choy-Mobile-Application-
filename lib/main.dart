@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:smartfarmingpakcoy_apps/pages/home_page.dart';
 import 'package:smartfarmingpakcoy_apps/pages/offline_control_page.dart';
 import 'package:smartfarmingpakcoy_apps/pages/admin_dashboard_page.dart';
+import 'package:smartfarmingpakcoy_apps/services/auth_service.dart';
+import 'package:smartfarmingpakcoy_apps/api/api_client.dart';
+// import 'package:smartfarmingpakcoy_apps/models/user.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,38 +20,57 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   bool? isOfflineMode;
-  bool isChecking = false;
-  Widget? startPage;
+  bool isChecking = true;
+  Widget? nextPage;
 
   @override
   void initState() {
     super.initState();
-    _checkConnectionToESP();
+    _determineMode();
   }
 
-  Future<void> _checkConnectionToESP() async {
-    setState(() {
-      isChecking = true;
-    });
+  Future<void> _determineMode() async {
+    const espUrl = 'http://192.168.4.1/';
 
     try {
-      final response = await http.get(Uri.parse('http://192.168.4.1/')).timeout(const Duration(seconds: 3));
-      if (response.statusCode == 200 && response.body.contains("Kontrol Manual Relay")) {
+      final response = await http
+          .get(Uri.parse(espUrl))
+          .timeout(const Duration(seconds: 3));
+
+      if (response.statusCode == 200 &&
+          response.body.contains("Kontrol Manual Relay")) {
         setState(() {
           isOfflineMode = true;
+          nextPage = const OfflineControlPage();
           isChecking = false;
         });
         return;
       }
     } catch (_) {}
 
-    final prefs = await SharedPreferences.getInstance();
-    final role = prefs.getString('role') ?? 'user';
-    setState(() {
-      isOfflineMode = false;
-      isChecking = false;
-      startPage = (role == 'admin') ? const AdminDashboardPage() : const HomePage();
-    });
+    // Jika ONLINE: cek role dari profile
+    final token = await AuthService.getToken();
+    if (token != null) {
+      try {
+        final user = await ApiClient.getUserProfile();
+        setState(() {
+          nextPage = (user.role == 'admin')
+              ? const AdminDashboardPage()
+              : const HomePage();
+          isChecking = false;
+        });
+      } catch (e) {
+        setState(() {
+          nextPage = const HomePage();
+          isChecking = false;
+        });
+      }
+    } else {
+      setState(() {
+        nextPage = const HomePage();
+        isChecking = false;
+      });
+    }
   }
 
   @override
@@ -57,11 +78,11 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       title: 'Smart Farming Pakcoy',
       debugShowCheckedModeBanner: false,
-      home: isOfflineMode == null || isChecking
-          ? const Scaffold(body: Center(child: CircularProgressIndicator()))
-          : isOfflineMode!
-              ? const OfflineControlPage()
-              : startPage ?? const HomePage(),
+      home: isChecking
+          ? const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            )
+          : nextPage!,
     );
   }
 }
