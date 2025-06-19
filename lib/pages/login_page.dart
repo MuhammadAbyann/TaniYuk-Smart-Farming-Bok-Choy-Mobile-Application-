@@ -20,20 +20,18 @@ class _LoginPageState extends State<LoginPage> {
     final password = passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Email dan password tidak boleh kosong")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Email dan password tidak boleh kosong")),
+      );
       return;
     }
 
     try {
-      // Login ke server
       final token = await AuthService.login(email: email, password: password);
 
-      // Simpan token ke SharedPreferences
       final prefs = await SharedPreferences.getInstance();
-      // await prefs.setString('token', token);
+      // await prefs.setString('token', token); → sudah ditangani di AuthService
 
-      // Navigasi ke halaman Home
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const HomePage()),
@@ -46,15 +44,44 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _forgotPassword() {
+    final controller = TextEditingController();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Lupa Password"),
-        content: const Text("Fitur lupa password akan mengirimkan link reset ke emailmu. (Belum aktif di versi ini)"),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: "Masukkan email yang terdaftar",
+          ),
+        ),
         actions: [
           TextButton(
+            child: const Text("Batal"),
             onPressed: () => Navigator.pop(context),
-            child: const Text("OK"),
+          ),
+          ElevatedButton(
+            child: const Text("Kirim"),
+            onPressed: () async {
+              final email = controller.text.trim();
+              if (email.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Email tidak boleh kosong")),
+                );
+                return;
+              }
+              try {
+                await AuthService.forgotPassword(email);
+                if (mounted) Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Permintaan reset telah dikirim ke admin")),
+                );
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Gagal mengirim: $e")),
+                );
+              }
+            },
           ),
         ],
       ),
