@@ -20,28 +20,28 @@ class AuthService {
 
   // Login User
   static Future<String> login({
-  required String email,
-  required String password,
-}) async {
-  final response = await ApiClient.post('/api/auth/login', {
-    'email': email,
-    'password': password,
-  });
+    required String email,
+    required String password,
+  }) async {
+    final response = await ApiClient.post('/api/auth/login', {
+      'email': email,
+      'password': password,
+    });
 
-  final token = response['token'];
-  if (token != null && token is String) {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_tokenKey, token);
+    final token = response['token'];
+    if (token != null && token is String) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_tokenKey, token);
 
-    // Ambil profile dan simpan role
-    final user = await ApiClient.getUserProfile();
-    await prefs.setString('role', user.role ?? 'user'); // ⬅️ Simpan role
+      // Ambil profile dan simpan role
+      final user = await ApiClient.getUserProfile();
+      await prefs.setString('role', user.role ?? 'user'); // ⬅️ Simpan role
 
-    return token;
-  } else {
-    throw Exception('Token tidak ditemukan saat login');
+      return token;
+    } else {
+      throw Exception('Token tidak ditemukan saat login');
+    }
   }
-}
 
   // Logout User
   static Future<void> logout() async {
@@ -68,8 +68,14 @@ class AuthService {
     return prefs.getString(_roleKey);
   }
 
-  // Dummy forgot password
+  // Mengirim permintaan lupa password ke backend
   static Future<void> forgotPassword(String email) async {
-    await Future.delayed(const Duration(seconds: 1));
+    final response = await ApiClient.post('/api/forgot-password', {
+      'email': email,
+    });
+
+    if (response['message'] != 'Permintaan reset dikirim ke admin') {
+      throw Exception('Gagal mengirim permintaan reset password');
+    }
   }
 }
