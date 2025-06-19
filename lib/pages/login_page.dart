@@ -6,7 +6,6 @@ import 'package:smartfarmingpakcoy_apps/services/auth_service.dart';
 import 'package:smartfarmingpakcoy_apps/api/api_client.dart';
 import 'package:smartfarmingpakcoy_apps/pages/register_page.dart';
 
-
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -18,6 +17,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
+  // Fungsi untuk login
   Future<void> _login() async {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
@@ -56,6 +56,7 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  // Fungsi untuk mengirim permintaan lupa password
   void _forgotPassword() {
     final controller = TextEditingController();
     showDialog(

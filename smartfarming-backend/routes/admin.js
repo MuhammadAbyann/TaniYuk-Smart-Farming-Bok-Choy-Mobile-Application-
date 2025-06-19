@@ -3,7 +3,6 @@ const router = express.Router();
 const User = require('../models/User');
 const authMiddleware = require('../middlewares/authMiddleware');
 const adminOnly = require('../middlewares/adminOnly');
-const bcrypt = require('bcryptjs');
 const ForgotPasswordRequest = require('../models/ForgotPasswordRequest');
 
 // GET semua user
@@ -28,13 +27,20 @@ router.post('/forgot-password-request', async (req, res) => {
 // PUT tandai request lupa password sebagai 'handled'
 router.put('/forgot-password-requests/:id/handle', authMiddleware, adminOnly, async (req, res) => {
   await ForgotPasswordRequest.findByIdAndUpdate(req.params.id, { status: 'handled' });
-  res.json({ message: 'Permintaan ditandai selesai' });
-});
 
-// DELETE user
-router.delete('/users/:id', authMiddleware, adminOnly, async (req, res) => {
-  await User.findByIdAndDelete(req.params.id);
-  res.json({ message: 'User berhasil dihapus' });
+  // Hapus user terkait permintaan lupa password
+  const request = await ForgotPasswordRequest.findById(req.params.id);
+  if (request) {
+    const user = await User.findOne({ email: request.userEmail });
+    if (user) {
+      await User.findByIdAndDelete(user._id); // Hapus akun pengguna
+      res.json({ message: 'Akun pengguna berhasil dihapus. Petani dapat mendaftar kembali.' });
+    } else {
+      res.status(404).json({ message: 'Pengguna tidak ditemukan' });
+    }
+  } else {
+    res.status(404).json({ message: 'Permintaan tidak ditemukan' });
+  }
 });
 
 module.exports = router;

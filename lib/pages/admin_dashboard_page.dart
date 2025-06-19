@@ -21,6 +21,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     fetchNotifications();
   }
 
+  // Mendapatkan daftar pengguna
   Future<void> fetchUsers() async {
     try {
       final response = await ApiClient.get('/api/admin/users');
@@ -30,6 +31,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     }
   }
 
+  // Mendapatkan daftar notifikasi
   Future<void> fetchNotifications() async {
     try {
       final res = await ApiClient.get('/api/admin/notifications');
@@ -39,6 +41,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     }
   }
 
+  // Reset password pengguna
   Future<void> resetPassword(String id) async {
     await ApiClient.put('/api/admin/users/$id/reset-password', {});
     ScaffoldMessenger.of(context).showSnackBar(
@@ -46,6 +49,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
+  // Hapus pengguna
   Future<void> deleteUser(String id) async {
     await ApiClient.delete('/api/admin/users/$id');
     await fetchUsers();
@@ -54,6 +58,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
+  // Logout
   Future<void> logout() async {
     await AuthService.logout();
     if (!mounted) return;
