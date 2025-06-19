@@ -6,9 +6,13 @@ const ForgotPasswordRequest = require('../models/ForgotPasswordRequest');
 router.post('/', async (req, res) => {
   const { email } = req.body;
 
+  if (!email) {
+    return res.status(400).json({ message: 'Email tidak boleh kosong' });
+  }
+
   try {
     const request = new ForgotPasswordRequest({ userEmail: email });
-    await request.save();
+    await request.save(); // Menyimpan permintaan ke database
     res.json({ message: 'Permintaan reset dikirim ke admin' });
   } catch (e) {
     res.status(500).json({ message: 'Gagal menyimpan permintaan' });
