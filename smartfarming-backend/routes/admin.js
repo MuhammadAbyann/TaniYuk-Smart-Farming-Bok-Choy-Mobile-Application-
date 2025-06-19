@@ -31,15 +31,6 @@ router.put('/forgot-password-requests/:id/handle', authMiddleware, adminOnly, as
   res.json({ message: 'Permintaan ditandai selesai' });
 });
 
-// PUT reset password user
-router.put('/users/:id/reset-password', authMiddleware, adminOnly, async (req, res) => {
-  const { newPassword } = req.body;
-  const hashed = await bcrypt.hash(newPassword, 10);
-
-  await User.findByIdAndUpdate(req.params.id, { password: hashed });
-  res.json({ message: 'Password berhasil direset' });
-});
-
 // DELETE user
 router.delete('/users/:id', authMiddleware, adminOnly, async (req, res) => {
   await User.findByIdAndDelete(req.params.id);
