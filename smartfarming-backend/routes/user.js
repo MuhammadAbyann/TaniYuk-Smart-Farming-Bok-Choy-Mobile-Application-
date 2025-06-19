@@ -11,11 +11,11 @@ router.get('/profile', authMiddleware, async (req, res) => {
 
     res.json({
       email: user.email || '',
-      role: user.role || 'user',
       lokasiLahan: user.lokasiLahan || 'Belum diatur',
       jenisTanaman: user.jenisTanaman || 'Belum diatur',
       luasLahan: user.luasLahan || 'Belum diatur',
       lamaPanen: user.lamaPanen || 'Belum diatur',
+      role: user.role || 'user',
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

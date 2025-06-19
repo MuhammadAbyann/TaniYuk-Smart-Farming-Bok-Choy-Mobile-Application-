@@ -2,10 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:smartfarmingpakcoy_apps/pages/home_page.dart';
 import 'package:smartfarmingpakcoy_apps/pages/offline_control_page.dart';
-import 'package:smartfarmingpakcoy_apps/pages/admin_dashboard_page.dart';
-import 'package:smartfarmingpakcoy_apps/services/auth_service.dart';
-import 'package:smartfarmingpakcoy_apps/api/api_client.dart';
-// import 'package:smartfarmingpakcoy_apps/models/user.dart';
+// import 'package:smartfarmingpakcoy_apps/services/auth_service';
 
 void main() {
   runApp(const MyApp());
@@ -19,58 +16,47 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  bool? isOfflineMode;
-  bool isChecking = true;
-  Widget? nextPage;
+  bool? isOfflineMode; // Untuk mengecek apakah mode offline atau online
+  bool isChecking = false; // Untuk status pengecekan koneksi
 
   @override
   void initState() {
     super.initState();
-    _determineMode();
+    _checkConnectionToESP(); // Langsung cek saat aplikasi mulai
   }
 
-  Future<void> _determineMode() async {
-    const espUrl = 'http://192.168.4.1/';
+  // Fungsi untuk mengecek koneksi ke ESP32
+  Future<void> _checkConnectionToESP() async {
+    setState(() {
+      isChecking = true; // Menandakan aplikasi sedang mengecek koneksi
+    });
+
+    const espUrl = 'http://192.168.4.1/'; // URL ESP32
 
     try {
+      debugPrint("🔍 Cek koneksi ke ESP32...");
       final response = await http
           .get(Uri.parse(espUrl))
-          .timeout(const Duration(seconds: 3));
+          .timeout(const Duration(seconds: 3)); // Timeout 3 detik
 
       if (response.statusCode == 200 &&
-          response.body.contains("Kontrol Manual Relay")) {
+          response.body.contains("Kontrol Manual Relay")) { // Pastikan ada kata kunci yang menunjukkan ESP32
+        debugPrint("✅ Terhubung ke ESP32 (Offline Mode)");
         setState(() {
-          isOfflineMode = true;
-          nextPage = const OfflineControlPage();
+          isOfflineMode = true; // Mode offline (terhubung ke ESP32)
           isChecking = false;
         });
         return;
       }
-    } catch (_) {}
-
-    // Jika ONLINE: cek role dari profile
-    final token = await AuthService.getToken();
-    if (token != null) {
-      try {
-        final user = await ApiClient.getUserProfile();
-        setState(() {
-          nextPage = (user.role == 'admin')
-              ? const AdminDashboardPage()
-              : const HomePage();
-          isChecking = false;
-        });
-      } catch (e) {
-        setState(() {
-          nextPage = const HomePage();
-          isChecking = false;
-        });
-      }
-    } else {
-      setState(() {
-        nextPage = const HomePage();
-        isChecking = false;
-      });
+    } catch (e) {
+      debugPrint("❌ Gagal koneksi ke ESP32: $e");
     }
+
+    debugPrint("🌐 Mode ONLINE");
+    setState(() {
+      isOfflineMode = false; // Jika gagal terhubung ke ESP32, online mode
+      isChecking = false;
+    });
   }
 
   @override
@@ -80,9 +66,11 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       home: isChecking
           ? const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
+              body: Center(child: CircularProgressIndicator()), // Menunggu status offline/online
             )
-          : nextPage!,
+          : isOfflineMode! // Jika mode offline
+              ? const OfflineControlPage()
+              : const HomePage(), // Jika mode online, pindah ke HomePage
     );
   }
 }

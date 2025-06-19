@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'home_page.dart';
-import 'register_page.dart';
+import 'package:smartfarmingpakcoy_apps/pages/home_page.dart';
+import 'package:smartfarmingpakcoy_apps/pages/admin_dashboard_page.dart';
 import 'package:smartfarmingpakcoy_apps/services/auth_service.dart';
+import 'package:smartfarmingpakcoy_apps/api/api_client.dart';
+import 'package:smartfarmingpakcoy_apps/pages/register_page.dart';
+
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -20,9 +23,8 @@ class _LoginPageState extends State<LoginPage> {
     final password = passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Email dan password tidak boleh kosong")),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("Email dan password tidak boleh kosong")));
       return;
     }
 
@@ -30,16 +32,27 @@ class _LoginPageState extends State<LoginPage> {
       final token = await AuthService.login(email: email, password: password);
 
       final prefs = await SharedPreferences.getInstance();
-      // await prefs.setString('token', token); → sudah ditangani di AuthService
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomePage()),
-      );
+      // Menyimpan token ke SharedPreferences
+      await prefs.setString('token', token);
+
+      // Ambil profil user setelah login
+      final user = await ApiClient.getUserProfile();
+      if (user.role == 'admin') {
+        // Arahkan ke halaman admin jika role adalah 'admin'
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AdminDashboardPage()),
+        );
+      } else {
+        // Arahkan ke halaman user biasa
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomePage()),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login gagal: $e')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login gagal: $e')));
     }
   }
 
@@ -129,13 +142,6 @@ class _LoginPageState extends State<LoginPage> {
                         border: OutlineInputBorder(),
                       ),
                     ),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: _forgotPassword,
-                        child: const Text("Lupa Password"),
-                      ),
-                    ),
                     const SizedBox(height: 20),
                     ElevatedButton(
                       onPressed: _login,
@@ -146,12 +152,21 @@ class _LoginPageState extends State<LoginPage> {
                       child: const Text("Login"),
                     ),
                     const SizedBox(height: 10),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: _forgotPassword,
+                        child: const Text("Lupa Password"),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Text("Belum punya akun?"),
                         TextButton(
                           onPressed: () {
+                            // Navigasi ke halaman registrasi
                             Navigator.push(
                               context,
                               MaterialPageRoute(builder: (context) => const RegisterPage()),
