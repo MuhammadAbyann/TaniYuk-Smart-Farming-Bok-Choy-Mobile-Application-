@@ -8,10 +8,3 @@ const forgotPasswordRequestSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model('ForgotPasswordRequest', forgotPasswordRequestSchema);
-
-const forgotLogSchema = new mongoose.Schema({
-  email: String,
-  time: { type: Date, default: Date.now },
-});
-
-module.exports = mongoose.model('ForgotLog', forgotLogSchema);
