@@ -11,18 +11,22 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ message: 'Email tidak boleh kosong' });
   }
 
+  console.log('Email diterima:', email);  // Log email yang diterima
+
   try {
     // Menyimpan permintaan ke database MongoDB
     const request = new ForgotPasswordRequest({ userEmail: email });
     await request.save(); // Menyimpan permintaan ke MongoDB
 
-    // Kirimkan respons sukses
     res.json({ message: 'Permintaan reset dikirim ke admin' });
   } catch (e) {
     res.status(500).json({ message: 'Gagal menyimpan permintaan' });
-    console.error(e); // Menampilkan error di server untuk debugging
+    console.error('Error menyimpan permintaan:', e);  // Log error jika terjadi kesalahan
   }
 });
 
+
 // Mengekspor router agar dapat digunakan di server.js
 module.exports = router;
+
+
