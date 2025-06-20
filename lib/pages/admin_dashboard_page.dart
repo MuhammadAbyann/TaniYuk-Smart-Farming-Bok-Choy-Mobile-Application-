@@ -116,8 +116,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     elevation: 4,
                     child: ListTile(
                       leading: const CircleAvatar(child: Icon(Icons.person)),
-                      title: Text(u['email']),
-                      subtitle: Text("Role: ${u['role']}"),
+                      title: Text(u['email'] ?? 'Email tidak tersedia'),  // Menangani null
+                      subtitle: Text("Role: ${u['role'] ?? 'Role tidak tersedia'}"), // Menangani null
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -144,13 +144,22 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             if (notifications.isEmpty)
-              const Text("Belum ada notifikasi"),
-            for (var notif in notifications)
-              ListTile(
-                leading: const Icon(Icons.mail_outline),
-                title: Text(notif['email']),
-                subtitle: Text("Waktu: ${notif['time'] ?? '-'}"),
-              )
+              const Text("Belum ada notifikasi")
+            else
+              // Menampilkan daftar notifikasi
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: notifications.length,
+                itemBuilder: (_, i) {
+                  final notif = notifications[i];
+                  return ListTile(
+                    leading: const Icon(Icons.mail_outline),
+                    title: Text(notif['userEmail'] ?? 'Email tidak tersedia'),  // Menangani null
+                    subtitle: Text("Waktu: ${notif['createdAt'] ?? 'Waktu tidak tersedia'}"), // Menangani null
+                  );
+                },
+              ),
           ],
         ),
       ),
