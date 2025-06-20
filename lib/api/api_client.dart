@@ -9,13 +9,24 @@ class ApiClient {
   static const String _baseUrl = 'http://34.101.104.19:5000';
 
   // Utilitas header bearer
-  static Future<Map<String, String>> _authHeaders() async {
-    final token = await AuthService.getToken();
-    print('[DEBUG] Token dari AuthService.getToken(): $token');
-    return {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    };
+   static Future<Map<String, String>> _authHeaders({bool requireAuth = true}) async {
+    if (requireAuth) {
+      final token = await AuthService.getToken();
+      print('[DEBUG] Token dari AuthService.getToken(): $token');
+      if (token == null) {
+        throw Exception('Token tidak ditemukan');
+      }
+
+      return {
+        'Authorization': 'Bearer $token',  // Kirimkan token jika autentikasi diperlukan
+        'Content-Type': 'application/json',
+      };
+    } else {
+      // Jika tidak perlu autentikasi (misalnya untuk reset password), jangan kirimkan token
+      return {
+        'Content-Type': 'application/json', // Hanya Content-Type jika tidak memerlukan token
+      };
+    }
   }
 
   static Future<User> getUserProfile() async {

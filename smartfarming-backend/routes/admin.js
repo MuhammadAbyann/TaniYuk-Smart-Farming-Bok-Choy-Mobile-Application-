@@ -11,6 +11,19 @@ router.get('/users', authMiddleware, adminOnly, async (req, res) => {
   res.json(users);
 });
 
+// GET notifikasi permintaan reset password untuk admin
+router.get('/notifications', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    // Ambil permintaan reset password
+    const notifications = await ForgotPasswordRequest.find().sort({ createdAt: -1 });
+    res.json(notifications); // Kirimkan data notifikasi ke frontend
+  } catch (e) {
+    res.status(500).json({ message: 'Gagal mengambil notifikasi' });
+    console.error(e);
+  }
+});
+
+
 // GET semua request lupa password (untuk ditampilkan ke admin)
 router.get('/forgot-password-requests', authMiddleware, adminOnly, async (req, res) => {
   const requests = await ForgotPasswordRequest.find().sort({ createdAt: -1 });
