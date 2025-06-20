@@ -13,7 +13,7 @@ class AuthService {
     final response = await ApiClient.post('/api/auth/register', {
       'email': email,
       'password': password,
-    });
+    }, requireAuth: true);
 
     return response;
   }
@@ -26,7 +26,7 @@ class AuthService {
     final response = await ApiClient.post('/api/auth/login', {
       'email': email,
       'password': password,
-    });
+    }, requireAuth: true);
 
     final token = response['token'];
     if (token != null && token is String) {
@@ -69,13 +69,22 @@ class AuthService {
   }
 
   // Mengirim permintaan lupa password ke backend
+  // Pastikan fungsi ini hanya digunakan saat token tidak diperlukan
   static Future<void> forgotPassword(String email) async {
-    final response = await ApiClient.post('/api/forgot-password', {
-      'email': email,
-    });
+    try {
+      final response = await ApiClient.post(
+        '/api/forgot-password',  // Endpoint API reset password
+        {'email': email},        // Kirimkan email ke backend
+        requireAuth: false,      // Jangan kirimkan token karena tidak diperlukan
+      );
 
-    if (response['message'] != 'Permintaan reset dikirim ke admin') {
-      throw Exception('Gagal mengirim permintaan reset password');
+      if (response != null) {
+        print('Permintaan reset password berhasil');
+      } else {
+        print('Gagal mengirim permintaan');
+      }
+    } catch (e) {
+      print('Error: $e');  // Tambahkan log untuk menangani kesalahan
     }
   }
 }

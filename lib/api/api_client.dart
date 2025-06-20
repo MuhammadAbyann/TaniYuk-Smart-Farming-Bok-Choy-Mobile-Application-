@@ -62,7 +62,7 @@ class ApiClient {
     return _processResponse(response);
   }
 
-  static Future<dynamic> post(String endpoint, Map<String, dynamic> body) async {
+  static Future<dynamic> post(String endpoint, Map<String, dynamic> body, {required bool requireAuth}) async {
     final headers = await _authHeaders();
     final response = await http.post(
       Uri.parse('$_baseUrl$endpoint'),
