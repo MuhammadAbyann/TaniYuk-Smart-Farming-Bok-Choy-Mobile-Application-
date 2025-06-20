@@ -5,7 +5,6 @@ const dotenv = require('dotenv');
 const connectDB = require('./config/mongodb');
 const morgan = require('morgan');
 
-
 // Load env
 dotenv.config();
 
@@ -29,7 +28,6 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/sensor', sensorRoutes);
 app.use('/api/user', require('./routes/user'));
-
 
 
 // Root
