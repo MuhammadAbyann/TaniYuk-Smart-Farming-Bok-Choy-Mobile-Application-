@@ -22,7 +22,9 @@ app.use(morgan('dev'));
 const authRoutes = require('./routes/authRoutes');
 const sensorRoutes = require('./routes/sensorRoutes');
 const adminRoutes = require('./routes/admin');
+const forgotPasswordRoute = require('./routes/forgotPassword'); 
 
+app.use('/api/forgot-password', forgotPasswordRoute);  
 app.use('/api/admin', adminRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/sensor', sensorRoutes);
