@@ -48,6 +48,7 @@ class _StatisticPageState extends State<StatisticPage> {
                       ),
                       value: latestData?.lux ?? 0.0,
                       indicatorColor: Colors.yellow,
+                      showStatusIndicators: false, // No status indicator for Light Intensity
                     ),
                     const SizedBox(height: 20),
                     SensorChart(
@@ -55,15 +56,62 @@ class _StatisticPageState extends State<StatisticPage> {
                       chartData: _createChartData(soilMoistureValues),
                       value: soilMoistureValues.isNotEmpty ? soilMoistureValues.last : 0.0,
                       indicatorColor: Colors.blue,
+                      showStatusIndicators: true, // Show status indicator for Soil Moisture
+                      soilMoistureIndicator: _getSoilMoistureIndicator(soilMoistureValues.last),
                     ),
                     const SizedBox(height: 20),
                     SensorChart(
-                      title: 'pH Tanah',
+                      title: 'pH Sensor',
                       chartData: _createChartData(
                         lastTenData.map((d) => d.phSensor ?? 0.0).toList(),
                       ),
                       value: latestData?.phSensor ?? 0.0,
                       indicatorColor: Colors.red,
+                      showStatusIndicators: true, // Show status indicator for pH
+                      phIndicators: _getPHIndicators(latestData?.phSensor ?? 0.0),
+                    ),
+                    const SizedBox(height: 20),
+                    SensorChart(
+                      title: 'pH Nano',
+                      chartData: _createChartData(
+                        lastTenData.map((d) => d.pHNano ?? 0.0).toList(),
+                      ),
+                      value: latestData?.pHNano ?? 0.0,
+                      indicatorColor: Colors.orange,
+                      showStatusIndicators: true, // Show status indicator for pH Nano
+                      phIndicators: _getPHIndicators(latestData?.pHNano ?? 0.0),
+                    ),
+                    const SizedBox(height: 20),
+                    SensorChart(
+                      title: 'Debit Air',
+                      chartData: _createChartData(
+                        lastTenData.map((d) => d.flowRate ?? 0.0).toList(),
+                      ),
+                      value: latestData?.flowRate ?? 0.0,
+                      indicatorColor: Colors.green,
+                      showStatusIndicators: false, // No status indicator for Flow Rate
+                    ),
+                    const SizedBox(height: 20),
+                    SensorChart(
+                      title: 'Temperatur',
+                      chartData: _createChartData(
+                        lastTenData.map((d) => d.temperature ?? 0.0).toList(),
+                      ),
+                      value: latestData?.temperature ?? 0.0,
+                      indicatorColor: Colors.purple,
+                      showStatusIndicators: true, // Show status indicator for Temperature
+                      temperatureIndicator: _getTemperatureIndicator(latestData?.temperature ?? 0.0),
+                    ),
+                    const SizedBox(height: 20),
+                    SensorChart(
+                      title: 'Kelembapan Udara',
+                      chartData: _createChartData(
+                        lastTenData.map((d) => d.humidity ?? 0.0).toList(),
+                      ),
+                      value: latestData?.humidity ?? 0.0,
+                      indicatorColor: Colors.cyan,
+                      showStatusIndicators: true, // Show status indicator for Humidity
+                      humidityIndicator: _getHumidityIndicator(latestData?.humidity ?? 0.0),
                     ),
                     const SizedBox(height: 80),
                   ],
@@ -96,6 +144,45 @@ class _StatisticPageState extends State<StatisticPage> {
         .map((entry) => FlSpot(entry.key.toDouble(), entry.value))
         .toList();
   }
+
+  String _getSoilMoistureIndicator(double soilMoisture) {
+    if (soilMoisture > 60) {
+      return 'Tinggi';
+    } else if (soilMoisture > 30) {
+      return 'Sedang';
+    } else {
+      return 'Rendah';
+    }
+  }
+
+  Map<String, Color> _getPHIndicators(double phValue) {
+    Map<String, Color> phIndicators = {
+      'Asam': phValue < 6.0 ? Colors.red : Colors.transparent,
+      'Netral': (phValue >= 6.0 && phValue <= 7.0) ? Colors.blue : Colors.transparent,
+      'Basa': phValue > 7.0 ? Colors.green : Colors.transparent,
+    };
+    return phIndicators;
+  }
+
+  String _getTemperatureIndicator(double temperature) {
+    if (temperature < 18) {
+      return 'Dingin';
+    } else if (temperature > 30) {
+      return 'Panas';
+    } else {
+      return 'Ideal';
+    }
+  }
+
+  String _getHumidityIndicator(double humidity) {
+    if (humidity < 50) {
+      return 'Rendah';
+    } else if (humidity > 80) {
+      return 'Tinggi';
+    } else {
+      return 'Sedang';
+    }
+  }
 }
 
 class SensorChart extends StatelessWidget {
@@ -103,17 +190,37 @@ class SensorChart extends StatelessWidget {
   final List<FlSpot> chartData;
   final double value;
   final Color indicatorColor;
+  final bool showStatusIndicators;
+  final String? soilMoistureIndicator;
+  final Map<String, Color>? phIndicators;
+  final String? temperatureIndicator;
+  final String? humidityIndicator;
 
   const SensorChart({
     required this.title,
     required this.chartData,
     required this.value,
     required this.indicatorColor,
+    required this.showStatusIndicators,
+    this.soilMoistureIndicator,
+    this.phIndicators,
+    this.temperatureIndicator,
+    this.humidityIndicator,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Menentukan rentang Y yang lebih tepat berdasarkan data yang ada
+    double maxY = chartData.isNotEmpty
+        ? chartData.map((e) => e.y).reduce((a, b) => a > b ? a : b)
+        : 100.0;
+    double minY = chartData.isNotEmpty
+        ? chartData.map((e) => e.y).reduce((a, b) => a < b ? a : b)
+        : 0.0;
+    minY = minY > 0 ? minY - 1 : minY;
+    maxY = maxY < 10 ? maxY + 1 : maxY;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -130,59 +237,79 @@ class SensorChart extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
           ),
           padding: const EdgeInsets.all(12),
-          child: chartData.isNotEmpty
-              ? LineChart(
-                  LineChartData(
-                    gridData: FlGridData(
-                      show: true,
-                      drawHorizontalLine: true,
-                      drawVerticalLine: true,
-                      horizontalInterval: indicatorColor == Colors.red ? 2 : 20,
-                      verticalInterval: 5,
-                      getDrawingHorizontalLine: (value) => FlLine(
-                        color: Colors.white.withOpacity(0.1),
-                        strokeWidth: 1,
-                      ),
-                      getDrawingVerticalLine: (value) => FlLine(
-                        color: Colors.white.withOpacity(0.1),
-                        strokeWidth: 1,
-                      ),
-                    ),
-                    titlesData: FlTitlesData(show: false),
-                    borderData: FlBorderData(show: false),
-                    minX: 0,
-                    maxX: chartData.length.toDouble() - 1,
-                    minY: 0,
-                    maxY: indicatorColor == Colors.yellow
-                        ? 1500
-                        : indicatorColor == Colors.blue
-                            ? 100
-                            : 14,
-                    lineBarsData: [
-                      LineChartBarData(
-                        spots: chartData,
-                        isCurved: true,
-                        color: indicatorColor,
-                        dotData: FlDotData(show: false),
-                        belowBarData: BarAreaData(show: false),
-                        barWidth: 3,
-                      ),
-                    ],
-                  ),
-                )
-              : const Center(child: Text("Tidak ada data yang tersedia")),
+          child: LineChart(
+            LineChartData(
+              gridData: FlGridData(
+                show: true,
+                drawHorizontalLine: true,
+                drawVerticalLine: true,
+                horizontalInterval: (maxY - minY) / 5, // Adjust horizontal lines
+                verticalInterval: 1,
+                getDrawingHorizontalLine: (value) => FlLine(
+                  color: Colors.white.withOpacity(0.1),
+                  strokeWidth: 1,
+                ),
+                getDrawingVerticalLine: (value) => FlLine(
+                  color: Colors.white.withOpacity(0.1),
+                  strokeWidth: 1,
+                ),
+              ),
+              titlesData: FlTitlesData(show: false),
+              borderData: FlBorderData(show: false),
+              minX: 0,
+              maxX: chartData.length.toDouble() - 1,
+              minY: minY,
+              maxY: maxY,
+              lineBarsData: [
+                LineChartBarData(
+                  spots: chartData,
+                  isCurved: true,
+                  color: indicatorColor,
+                  dotData: FlDotData(show: false),
+                  belowBarData: BarAreaData(show: false),
+                  barWidth: 3,
+                ),
+              ],
+            ),
+          ),
         ),
         const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            _buildStatusIndicator('Tinggi', value > 60 ? Colors.green : Colors.transparent),
-            const SizedBox(width: 10),
-            _buildStatusIndicator('Sedang', value > 30 && value <= 60 ? Colors.yellow : Colors.transparent),
-            const SizedBox(width: 10),
-            _buildStatusIndicator('Rendah', value <= 30 ? Colors.red : Colors.transparent),
-          ],
-        ),
+        if (showStatusIndicators) ...[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              if (soilMoistureIndicator != null) ...[
+                _buildStatusIndicator(soilMoistureIndicator ?? 'Tinggi', value > 60 ? Colors.green : Colors.transparent),
+                const SizedBox(width: 10),
+                _buildStatusIndicator('Sedang', value > 30 && value <= 60 ? Colors.yellow : Colors.transparent),
+                const SizedBox(width: 10),
+                _buildStatusIndicator('Rendah', value <= 30 ? Colors.red : Colors.transparent),
+              ],
+              if (phIndicators != null) ...[
+                _buildStatusIndicator('Asam', phIndicators!['Asam'] ?? Colors.transparent),
+                const SizedBox(width: 10),
+                _buildStatusIndicator('Netral', phIndicators!['Netral'] ?? Colors.transparent),
+                const SizedBox(width: 10),
+                _buildStatusIndicator('Basa', phIndicators!['Basa'] ?? Colors.transparent),
+              ],
+              if (temperatureIndicator != null) ...[
+                _buildStatusIndicator('Panas', value > 30 ? Colors.red : Colors.transparent),
+                const SizedBox(width: 10),
+                _buildStatusIndicator(temperatureIndicator ?? 'Ideal', Colors.blue),
+                const SizedBox(width: 10),
+                _buildStatusIndicator('Dingin', value < 18 ? Colors.blue : Colors.transparent),
+              ],
+              if (humidityIndicator != null) ...[
+                _buildStatusIndicator('Tinggi', value > 80 ? Colors.green : Colors.transparent),
+                const SizedBox(width: 10),
+                _buildStatusIndicator(humidityIndicator ?? 'Sedang', Colors.blue),
+                const SizedBox(width: 10),
+                _buildStatusIndicator('Rendah', value < 50 ? Colors.red : Colors.transparent),
+              ],
+            ],
+          ),
+          const SizedBox(height: 8)
+        ],
         const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
