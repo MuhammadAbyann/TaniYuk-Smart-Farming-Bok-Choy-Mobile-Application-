@@ -45,7 +45,7 @@ class SensorData {
     return SensorData(
       timestamp: DateTime.parse(json['_time'] ?? json['timestamp']),
       time: DateTime.parse(json['_time']),
-      phSensor: json['ph_sensor'] != null ? (json['ph_sensor'] as num).toDouble() : null,
+      phSensor: json['pH_sensor'] != null ? (json['pH_sensor'] as num).toDouble() : null,
       pHNano: json['pH_nano'] != null ? (json['pH_nano'] as num).toDouble() : null,
       soilMoisture1: json['soil_moisture_1'] != null ? (json['soil_moisture_1'] as num).toDouble() : null,
       soilMoisture2: json['soil_moisture_2'] != null ? (json['soil_moisture_2'] as num).toDouble() : null,

@@ -76,78 +76,91 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildCombinedChart() {
-    List<double> soilMoistureValues = _sensorData.map((d) {
-      final values = [
-        d.nanoMoisture1 ?? 0,
-        d.nanoMoisture2 ?? 0,
-        d.nanoMoisture3 ?? 0,
-        d.soilMoisture1 ?? 0,
-        d.soilMoisture2 ?? 0,
-      ];
-      final count = values.where((v) => v > 0).length;
-      if (count == 0) return 0.0;
-      return values.reduce((a, b) => a + b) / count;
-    }).toList();
+  List<double> soilMoistureValues = _sensorData.map((d) {
+    final values = [
+      d.nanoMoisture1 ?? 0,
+      d.nanoMoisture2 ?? 0,
+      d.nanoMoisture3 ?? 0,
+      d.soilMoisture1 ?? 0,
+      d.soilMoisture2 ?? 0,
+    ];
+    final count = values.where((v) => v > 0).length;
+    if (count == 0) return 0.0;
+    return values.reduce((a, b) => a + b) / count;
+  }).toList();
 
-    final chartDataCahaya = _sensorData
-        .asMap()
-        .entries
-        .map((entry) => FlSpot(entry.key.toDouble(), entry.value.lux ?? 0.0))
-        .toList();
+  final chartDataCahaya = _sensorData
+      .asMap()
+      .entries
+      .map((entry) => FlSpot(entry.key.toDouble(), entry.value.lux ?? 0.0))
+      .toList();
 
-    final chartDataKelembapanTanah = soilMoistureValues
-        .asMap()
-        .entries
-        .map((entry) => FlSpot(entry.key.toDouble(), entry.value))
-        .toList();
+  final chartDataKelembapanTanah = soilMoistureValues
+      .asMap()
+      .entries
+      .map((entry) => FlSpot(entry.key.toDouble(), entry.value))
+      .toList();
 
-    final chartDataPhTanah = _sensorData
-        .asMap()
-        .entries
-        .map((entry) => FlSpot(entry.key.toDouble(), entry.value.phSensor ?? 0.0))
-        .toList();
+  final chartDataPhTanah = _sensorData
+      .asMap()
+      .entries
+      .map((entry) => FlSpot(entry.key.toDouble(), entry.value.phSensor ?? 0.0))
+      .toList();
 
-    return Container(
-      height: 200,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: const Color(0xFF184C45),
-        borderRadius: BorderRadius.circular(16),
+  final chartDataPhNano = _sensorData
+      .asMap()
+      .entries
+      .map((entry) => FlSpot(entry.key.toDouble(), entry.value.pHNano ?? 0.0))
+      .toList(); // Menambahkan pH Nano ke grafik
+
+  return Container(
+    height: 200,
+    width: double.infinity,
+    decoration: BoxDecoration(
+      color: const Color(0xFF184C45),
+      borderRadius: BorderRadius.circular(16),
+    ),
+    padding: const EdgeInsets.all(12),
+    child: LineChart(
+      LineChartData(
+        gridData: FlGridData(show: false),
+        titlesData: FlTitlesData(show: false),
+        borderData: FlBorderData(show: false),
+        minX: 0,
+        maxX: (_sensorData.length > 0 ? _sensorData.length - 1 : 9).toDouble(),
+        minY: 0,
+        maxY: 1500, // Sesuaikan maxY sesuai data cahaya atau buat dinamis
+        lineBarsData: [
+          LineChartBarData(
+            spots: chartDataCahaya,
+            isCurved: true,
+            color: Colors.yellow,
+            belowBarData: BarAreaData(show: false),
+          ),
+          LineChartBarData(
+            spots: chartDataKelembapanTanah,
+            isCurved: true,
+            color: Colors.blue,
+            belowBarData: BarAreaData(show: false),
+          ),
+          LineChartBarData(
+            spots: chartDataPhTanah,
+            isCurved: true,
+            color: Colors.green,
+            belowBarData: BarAreaData(show: false),
+          ),
+          LineChartBarData(
+            spots: chartDataPhNano, // Tambahkan bar untuk pH Nano
+            isCurved: true,
+            color: Colors.red, // Ubah warna sesuai keinginan
+            belowBarData: BarAreaData(show: false),
+          ),
+        ],
       ),
-      padding: const EdgeInsets.all(12),
-      child: LineChart(
-        LineChartData(
-          gridData: FlGridData(show: false),
-          titlesData: FlTitlesData(show: false),
-          borderData: FlBorderData(show: false),
-          minX: 0,
-          maxX: (_sensorData.length > 0 ? _sensorData.length - 1 : 9).toDouble(),
-          minY: 0,
-          maxY: 1500, // Sesuaikan maxY sesuai data cahaya atau buat dinamis
-          lineBarsData: [
-            LineChartBarData(
-              spots: chartDataCahaya,
-              isCurved: true,
-              color: Colors.yellow,
-              belowBarData: BarAreaData(show: false),
-            ),
-            LineChartBarData(
-              spots: chartDataKelembapanTanah,
-              isCurved: true,
-              color: Colors.blue,
-              belowBarData: BarAreaData(show: false),
-            ),
-            LineChartBarData(
-              spots: chartDataPhTanah,
-              isCurved: true,
-              color: Colors.red,
-              belowBarData: BarAreaData(show: false),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+    ),
+  );
+}
+
 
   Widget _buildBasicMonitoring(SensorData? latestData) {
     double? kelembapanTanah;
@@ -169,7 +182,7 @@ class _HomePageState extends State<HomePage> {
         'label': 'Kelembapan',
         'value': kelembapanTanah != null ? '${kelembapanTanah.toStringAsFixed(1)}%' : '--%',
         'color': (kelembapanTanah != null && kelembapanTanah < 50)
-            ? Colors.red[200]
+            ? const Color.fromARGB(255, 139, 0, 0)
             : Colors.blue[200],
       },
       {
@@ -177,7 +190,7 @@ class _HomePageState extends State<HomePage> {
         'label': 'pH Sensor',
         'value': latestData != null && latestData.phSensor != null ? '${latestData.phSensor!.toStringAsFixed(1)}' : '--',
         'color': (latestData != null && (latestData.phSensor != null && (latestData.phSensor! < 5.5 || latestData.phSensor! > 7)))
-            ? Colors.red[200]
+            ? const Color.fromARGB(255, 139, 0, 0)
             : Colors.green[200],
       },
       {
@@ -185,16 +198,16 @@ class _HomePageState extends State<HomePage> {
         'label': 'pH Nano',
         'value': latestData != null && latestData.pHNano != null ? '${latestData.pHNano!.toStringAsFixed(1)}' : '--',
         'color': (latestData != null && (latestData.pHNano != null && (latestData.pHNano! < 5.5 || latestData.pHNano! > 7)))
-            ? Colors.red[200]
-            : Colors.green[200],
+            ? const Color.fromARGB(255, 139, 0, 0)
+            : Colors.purpleAccent[200],
       },
       {
         'icon': Icons.wb_sunny,
         'label': 'Cahaya',
         'value': latestData != null ? '${latestData.lux?.toStringAsFixed(0) ?? '--'} lux' : '-- lux',
         'color': (latestData != null && latestData.lux != null && latestData.lux! < 800)
-            ? Colors.orange[200]
-            : Colors.amber[200],
+            ? Colors.yellow[200]
+            : Colors.yellow[200],
       },
     ];
 
@@ -306,7 +319,7 @@ class _HomePageState extends State<HomePage> {
               _buildCombinedChart(),
               const SizedBox(height: 10),
               const Text(
-                "Garis Kuning: Cahaya | Garis Biru: Kelembapan | Garis Merah: pH Tanah",
+                "Garis Kuning: Cahaya | Garis Biru: Kelembapan | Garis Merah: pH Nano | Garis Hijau : pH Sensor",
                 style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
               ),
               const SizedBox(height: 20),
