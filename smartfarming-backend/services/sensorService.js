@@ -11,7 +11,6 @@ const validateSensorData = (data) => {
     humidity, temperature, lux, flow_rate
   } = data;
 
-  // Contoh validasi, sesuaikan rentang dan tipe data
   if (
     (ph_sensor !== undefined && (typeof ph_sensor !== 'number' || ph_sensor < 0 || ph_sensor > 14)) ||
     (pH_nano !== undefined && (typeof pH_nano !== 'number' || pH_nano < 0 || pH_nano > 14)) ||
@@ -84,6 +83,7 @@ const querySensorDataByDevice = async (device, start = '-30d', stop = 'now()') =
       |> range(start: ${start}, stop: ${stop})
       |> filter(fn: (r) => r._measurement == "sensor_data")
       |> filter(fn: (r) => r.device == "${device}")
+      |> filter(fn: (r) => r._field == "ph_sensor" or r._field == "pH_nano")
       |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
       |> sort(columns: ["_time"], desc: false)
   `;
