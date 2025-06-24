@@ -243,97 +243,85 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _getBody() {
-    final latestData = _sensorData.isNotEmpty ? _sensorData.last : null;
-    switch (selectedIndex) {
-      case 0:
-        return const StatisticPage();
-      case 2:
-        return const ProfilePage();
-      default:
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+ Widget _getBody() {
+  final latestData = _sensorData.isNotEmpty ? _sensorData.last : null;
+  switch (selectedIndex) {
+    case 0:
+      return const StatisticPage();
+    case 2:
+      return const ProfilePage();
+    default:
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Menempatkan "TaniYuk" di tengah atas
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center, // Mengatur "TaniYuk" di tengah
+              children: const [
+                Text(
+                  "TaniYuk",
+                  style: TextStyle(
+                    fontSize: 25,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Icon(Icons.arrow_back),
-                  Column(
-                    children: const [
-                      Text(
-                        "Pakcoy Fields",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        "Ditanam 1 April 2025",
-                        style: TextStyle(fontSize: 12),
-                      ),
-                    ],
+                  const Text(
+                    "MONITORING",
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  const CircleAvatar(
-                    backgroundColor: Color(0xFF184C45),
-                    child: Icon(Icons.person, color: Colors.white),
+                  DropdownButton<String>(
+                    value: selectedInterval,
+                    dropdownColor: const Color.fromARGB(255, 255, 255, 255),
+                    style: const TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
+                    underline: const SizedBox(),
+                    iconEnabledColor: const Color.fromARGB(255, 0, 0, 0),
+                    items: const [
+                      DropdownMenuItem(value: 'Daily', child: Text('Daily')),
+                      DropdownMenuItem(value: 'Weekly', child: Text('Weekly')),
+                      DropdownMenuItem(value: 'Monthly', child: Text('Monthly')),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        selectedInterval = value!;
+                        _fetchSensorData();
+                      });
+                    },
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      "MONITORING",
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    DropdownButton<String>(
-                      value: selectedInterval,
-                      dropdownColor: const Color.fromARGB(255, 255, 255, 255),
-                      style: const TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
-                      underline: const SizedBox(),
-                      iconEnabledColor: const Color.fromARGB(255, 0, 0, 0),
-                      items: const [
-                        DropdownMenuItem(value: 'Daily', child: Text('Daily')),
-                        DropdownMenuItem(value: 'Weekly', child: Text('Weekly')),
-                        DropdownMenuItem(value: 'Monthly', child: Text('Monthly')),
-                      ],
-                      onChanged: (value) {
-                        setState(() {
-                          selectedInterval = value!;
-                          _fetchSensorData();
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              _buildCombinedChart(),
-              const SizedBox(height: 10),
-              const Text(
-                "Garis Kuning: Cahaya | Garis Biru: Kelembapan | Garis Merah: pH Nano | Garis Hijau : pH Sensor",
-                style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                "Basic Monitoring",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-              _buildBasicMonitoring(latestData),
-            ],
-          ),
-        );
-    }
+            ),
+            const SizedBox(height: 8),
+            _buildCombinedChart(),
+            const SizedBox(height: 10),
+            const Text(
+              "Garis Kuning: Cahaya | Garis Biru: Kelembapan | Garis Merah: pH Nano | Garis Hijau : pH Sensor",
+              style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              "Basic Monitoring",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            _buildBasicMonitoring(latestData),
+          ],
+        ),
+      );
   }
+}
 
   @override
   Widget build(BuildContext context) {

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:smartfarmingpakcoy_apps/api/api_client.dart';
 import 'package:smartfarmingpakcoy_apps/pages/login_page.dart';
-import 'package:smartfarmingpakcoy_apps/pages/home_page.dart';
 import 'package:smartfarmingpakcoy_apps/services/auth_service.dart';
-// import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smartfarmingpakcoy_apps/models/user.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -109,18 +107,27 @@ class _ProfilePageState extends State<ProfilePage> {
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginPage()));
   }
 
+  void showContactPopup() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Contact Us'),
+        content: const Text('Admin Contacts:\n085216588735\n081297702262\n088901742261'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Tutup')),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profil Pengguna'),
         backgroundColor: Colors.teal,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const HomePage()));
-          },
-        ),
+        // Menghapus tombol back kiri atas
+        automaticallyImplyLeading: false, 
         actions: [
           IconButton(icon: const Icon(Icons.edit), onPressed: editProfileDialog),
         ],
@@ -149,8 +156,7 @@ class _ProfilePageState extends State<ProfilePage> {
               const SizedBox(height: 20),
 
               _buildInfoSection("Lainnya", [
-                _buildInfoRow(Icons.email, "Contact Us"),
-                _buildInfoRow(Icons.privacy_tip, "Privacy Policy"),
+                _buildInfoRow(Icons.email, "Contact Us", onPressed: showContactPopup), // Menambahkan fungsi pop-up pada "Contact Us"
               ]),
 
               const Spacer(),
@@ -196,14 +202,19 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String text) {
+  Widget _buildInfoRow(IconData icon, String text, {VoidCallback? onPressed}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
           Icon(icon, size: 20, color: Colors.teal),
           const SizedBox(width: 10),
-          Expanded(child: Text(text)),
+          Expanded(
+            child: GestureDetector(
+              onTap: onPressed,
+              child: Text(text),
+            ),
+          ),
         ],
       ),
     );

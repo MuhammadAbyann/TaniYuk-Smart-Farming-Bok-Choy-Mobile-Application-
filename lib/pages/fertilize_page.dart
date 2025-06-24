@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
-import 'package:smartfarmingpakcoy_apps/api/api_client.dart';
-import 'package:smartfarmingpakcoy_apps/pages/sensor_data.dart';
 
 class FertilizerControlPage extends StatefulWidget {
   const FertilizerControlPage({super.key});
@@ -12,15 +9,8 @@ class FertilizerControlPage extends StatefulWidget {
 }
 
 class _FertilizerControlPageState extends State<FertilizerControlPage> {
-  late Future<List<SensorData>> sensorFuture;
   bool isOn = false;
   bool isAuto = false;
-
-  @override
-  void initState() {
-    super.initState();
-    sensorFuture = ApiClient.getDailySensorData();
-  }
 
   Future<void> sendManualCommand(bool turnOn) async {
     final url = Uri.parse("http://192.168.4.1/fertilizing/${turnOn ? 'on' : 'off'}");
@@ -90,6 +80,7 @@ class _FertilizerControlPageState extends State<FertilizerControlPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            // Gambar atau ikon pemupukan, jika dibutuhkan
             Container(
               width: 150,
               height: 150,
@@ -116,57 +107,7 @@ class _FertilizerControlPageState extends State<FertilizerControlPage> {
               ),
             ),
             const SizedBox(height: 30),
-            FutureBuilder<List<SensorData>>(
-              future: sensorFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SizedBox(height: 150, child: Center(child: CircularProgressIndicator()));
-                } else if (snapshot.hasError) {
-                  return SizedBox(height: 150, child: Center(child: Text('Error: ${snapshot.error}')));
-                }
-
-                final data = snapshot.data ?? [];
-                final chartData = data.asMap().entries.map(
-                  (entry) => FlSpot(entry.key.toDouble(), entry.value.phSensor ?? 0),
-                ).toList();
-
-                if (chartData.isEmpty) {
-                  return const SizedBox(height: 150, child: Center(child: Text("Tidak ada data yang tersedia")));
-                }
-
-                return Container(
-                  height: 150,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.green[900],
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  padding: const EdgeInsets.all(12),
-                  child: LineChart(
-                    LineChartData(
-                      gridData: FlGridData(show: true),
-                      titlesData: FlTitlesData(show: false),
-                      borderData: FlBorderData(show: false),
-                      minX: 0,
-                      maxX: chartData.length.toDouble() - 1,
-                      minY: 0,
-                      maxY: 14,
-                      lineBarsData: [
-                        LineChartBarData(
-                          spots: chartData,
-                          isCurved: true,
-                          color: Colors.lightGreenAccent,
-                          barWidth: 3,
-                          dotData: FlDotData(show: false),
-                          belowBarData: BarAreaData(show: false),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 30),
+            // Tombol Manual dan Otomatis
             Container(
               decoration: BoxDecoration(
                 color: Colors.green[700],

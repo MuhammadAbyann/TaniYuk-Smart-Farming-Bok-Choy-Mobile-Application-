@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
-import '../api/api_client.dart';
-import '../pages/sensor_data.dart';
 
 class WateringControlPage extends StatefulWidget {
   const WateringControlPage({super.key});
@@ -14,32 +10,34 @@ class WateringControlPage extends StatefulWidget {
 }
 
 class _WateringControlPageState extends State<WateringControlPage> {
-  late Future<List<SensorData>> sensorFuture;
-  double waterVolume = 0.0;
   bool isOn = false;
   bool isAuto = false;
 
   @override
   void initState() {
     super.initState();
-    sensorFuture = ApiClient.getDailySensorData();
-    fetchWaterVolume();
+    _initializeControlState();
   }
 
-  Future<void> fetchWaterVolume() async {
+  // Mengambil status kontrol penyiraman dari alat ESP32
+  Future<void> _initializeControlState() async {
     try {
-      final response = await http.get(Uri.parse('http://192.168.4.1/api/sensor/total-volume'));
+      final response = await http.get(Uri.parse('http://192.168.4.1/api/watering/state'));
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body);
         setState(() {
-          waterVolume = double.tryParse(jsonData['totalVolume'].toString()) ?? 0.0;
+          isOn = jsonData['isOn'];   // Status kontrol manual (nyala/mati)
+          isAuto = jsonData['isAuto']; // Status kontrol otomatis (nyala/mati)
         });
+      } else {
+        debugPrint('Gagal mengambil status kontrol: ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('Gagal mengambil volume air: $e');
+      debugPrint('Gagal mengambil status kontrol: $e');
     }
   }
 
+  // Mengirim perintah manual ke alat (on/off)
   Future<void> sendManualCommand(bool turnOn) async {
     final url = Uri.parse('http://192.168.4.1/watering/${turnOn ? 'on' : 'off'}');
     try {
@@ -49,12 +47,13 @@ class _WateringControlPageState extends State<WateringControlPage> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal manual: ${response.statusCode}')));
       }
-      await fetchWaterVolume();
+      await _initializeControlState();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
+  // Mengirim perintah otomatis ke alat
   Future<void> sendAutoCommand() async {
     final url = Uri.parse('http://192.168.4.1/watering/auto');
     try {
@@ -64,12 +63,13 @@ class _WateringControlPageState extends State<WateringControlPage> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal auto: ${response.statusCode}')));
       }
-      await fetchWaterVolume();
+      await _initializeControlState();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
+  // Mengubah status kontrol manual
   void toggleManual() {
     setState(() {
       isOn = !isOn;
@@ -78,6 +78,7 @@ class _WateringControlPageState extends State<WateringControlPage> {
     sendManualCommand(isOn);
   }
 
+  // Mengubah status kontrol otomatis
   void toggleAuto() {
     setState(() {
       isAuto = true;
@@ -124,80 +125,7 @@ class _WateringControlPageState extends State<WateringControlPage> {
               ),
             ),
             const SizedBox(height: 30),
-            FutureBuilder<List<SensorData>>(
-              future: sensorFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SizedBox(height: 150, child: Center(child: CircularProgressIndicator()));
-                } else if (snapshot.hasError) {
-                  return SizedBox(height: 150, child: Center(child: Text('Error: ${snapshot.error}')));
-                }
-
-                final data = snapshot.data ?? [];
-                final chartData = data.asMap().entries.map(
-                  (entry) => FlSpot(entry.key.toDouble(), entry.value.averageSoilMoisture),
-                ).toList();
-
-                if (chartData.isEmpty) {
-                  return const SizedBox(height: 150, child: Center(child: Text("Tidak ada data yang tersedia")));
-                }
-
-                return Container(
-                  height: 150,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.blue[900],
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  padding: const EdgeInsets.all(12),
-                  child: LineChart(
-                    LineChartData(
-                      gridData: FlGridData(show: true),
-                      titlesData: FlTitlesData(show: false),
-                      borderData: FlBorderData(show: false),
-                      minX: 0,
-                      maxX: chartData.length.toDouble() - 1,
-                      minY: 0,
-                      maxY: 100,
-                      lineBarsData: [
-                        LineChartBarData(
-                          spots: chartData,
-                          isCurved: true,
-                          color: Colors.lightBlueAccent,
-                          dotData: FlDotData(show: false),
-                          belowBarData: BarAreaData(show: false),
-                          barWidth: 3,
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
             const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24),
-              decoration: BoxDecoration(
-                color: Colors.blue[100],
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.opacity, color: Colors.blue),
-                  const SizedBox(width: 10),
-                  Text(
-                    'Volume Air Keluar: ',
-                    style: TextStyle(fontSize: 16, color: Colors.blue[800], fontWeight: FontWeight.w600),
-                  ),
-                  Text(
-                    '${waterVolume.toStringAsFixed(2)} L',
-                    style: TextStyle(fontSize: 16, color: Colors.blue[900], fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 30),
             Container(
               decoration: BoxDecoration(
                 color: Colors.blue[700],
