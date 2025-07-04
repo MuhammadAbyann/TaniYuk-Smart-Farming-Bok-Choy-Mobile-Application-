@@ -5,6 +5,8 @@ import 'package:smartfarmingpakcoy_apps/pages/admin_dashboard_page.dart';
 import 'package:smartfarmingpakcoy_apps/services/auth_service.dart';
 import 'package:smartfarmingpakcoy_apps/api/api_client.dart';
 import 'package:smartfarmingpakcoy_apps/pages/register_page.dart';
+import 'package:smartfarmingpakcoy_apps/pages/welcome_page.dart';
+
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -105,6 +107,20 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const WelcomePage()),
+              );
+            },
+          ),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.black,
+        ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(

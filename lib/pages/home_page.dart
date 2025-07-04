@@ -36,36 +36,35 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _fetchSensorData() async {
-    try {
-      Future<List<SensorData>> fetchFunc;
-      switch (selectedInterval) {
-        case 'Daily':
-          fetchFunc = ApiClient.getDailySensorData();
-          break;
-        case 'Weekly':
-          fetchFunc = ApiClient.getWeeklySensorData();
-          break;
-        case 'Monthly':
-          fetchFunc = ApiClient.getMonthlySensorData();
-          break;
-        default:
-          fetchFunc = ApiClient.getDailySensorData();
-      }
-
-      final newData = await fetchFunc;
-
-      if (newData.isNotEmpty) {
-        // Asumsi SensorData ada properti DateTime timestamp
-        newData.sort((a, b) => a.timestamp.compareTo(b.timestamp)); // ascending
-
-        setState(() {
-          _sensorData = newData.length > 10 ? newData.sublist(newData.length - 10) : newData;
-        });
-      }
-    } catch (e) {
-      print('Error fetching sensor data: $e');
+  try {
+    Future<List<SensorData>> fetchFunc;
+    switch (selectedInterval) {
+      case 'Daily':
+        fetchFunc = ApiClient.getDailySensorData();
+        break;
+      case 'Weekly':
+        fetchFunc = ApiClient.getWeeklySensorData();
+        break;
+      case 'Monthly':
+        fetchFunc = ApiClient.getMonthlySensorData();
+        break;
+      default:
+        fetchFunc = ApiClient.getDailySensorData();
     }
+
+    final newData = await fetchFunc;
+    newData.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+    setState(() {
+      _sensorData = newData.length > 10
+          ? newData.sublist(newData.length - 10)
+          : newData;
+    });
+  } catch (e) {
+    print('Error fetching sensor data: $e');
   }
+}
+
 
   bool listEquals(List<SensorData> a, List<SensorData> b) {
     if (a.length != b.length) return false;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smartfarmingpakcoy_apps/services/auth_service.dart';
+import 'package:smartfarmingpakcoy_apps/pages/welcome_page.dart';
 import 'package:smartfarmingpakcoy_apps/pages/login_page.dart'; 
 
 class RegisterPage extends StatefulWidget {
@@ -65,21 +66,23 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar( // 🔙 Tombol kembali
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+      appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const WelcomePage()),
+              );
+            },
+          ),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.black,
         ),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.black,
-      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(

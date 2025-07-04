@@ -58,4 +58,23 @@ class SensorData {
       flowRate: json['flow_rate'] != null ? (json['flow_rate'] as num).toDouble() : null,
     );
   }
+
+  factory SensorData.empty() {
+    final now = DateTime.now();
+    return SensorData(
+      timestamp: now,
+      time: now,
+      phSensor: 0,
+      pHNano: 0,
+      soilMoisture1: 0,
+      soilMoisture2: 0,
+      nanoMoisture1: 0,
+      nanoMoisture2: 0,
+      nanoMoisture3: 0,
+      humidity: 0,
+      temperature: 0,
+      lux: 0,
+      flowRate: 0,
+    );
+  }
 }

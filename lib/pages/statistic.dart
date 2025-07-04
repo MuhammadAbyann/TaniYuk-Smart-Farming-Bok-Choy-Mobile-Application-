@@ -33,7 +33,9 @@ class _StatisticPageState extends State<StatisticPage> {
             } else {
               final data = snapshot.data!;
               data.sort((a, b) => a.timestamp.compareTo(b.timestamp));
-              final lastTenData = data.length > 10 ? data.sublist(data.length - 10) : data;
+              final lastTenData = data.length > 10
+                    ? data.sublist(data.length - 10)
+                    : (data.isEmpty ? List.generate(10, (_) => SensorData.empty()) : data);
               final soilMoistureValues = _calcSoilMoisture(lastTenData);
               final latestData = lastTenData.isNotEmpty ? lastTenData.last : null;
 
