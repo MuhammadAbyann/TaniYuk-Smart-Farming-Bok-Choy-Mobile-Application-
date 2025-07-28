@@ -151,6 +151,14 @@ class ApiClient {
     return _processResponse(response);
   }
 
+  static Future<void> deleteUser(String userId) async {
+  final url = Uri.parse('$_baseUrl/admin/users/$userId');
+  final response = await http.delete(url, headers: await _authHeaders());
+
+  if (response.statusCode != 200) {
+    throw Exception('Gagal menghapus user');
+  }
+  }
 
 }
 

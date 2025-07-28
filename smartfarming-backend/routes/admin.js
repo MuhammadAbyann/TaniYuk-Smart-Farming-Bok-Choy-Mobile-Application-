@@ -25,7 +25,6 @@ router.get('/notifications', authMiddleware, adminOnly, async (req, res) => {
   }
 });
 
-
 // GET semua request lupa password (untuk ditampilkan ke admin)
 router.get('/forgot-password-requests', authMiddleware, adminOnly, async (req, res) => {
   const requests = await ForgotPasswordRequest.find().sort({ createdAt: -1 });
@@ -55,6 +54,20 @@ router.put('/forgot-password-requests/:id/handle', authMiddleware, adminOnly, as
     }
   } else {
     res.status(404).json({ message: 'Permintaan tidak ditemukan' });
+  }
+});
+
+// DELETE user by ID
+router.delete('/users/:id', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User tidak ditemukan' });
+    }
+    res.json({ message: 'User berhasil dihapus' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Gagal menghapus user' });
   }
 });
 

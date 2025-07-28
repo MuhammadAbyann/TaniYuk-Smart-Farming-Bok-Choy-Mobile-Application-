@@ -34,7 +34,6 @@ const writeSensorData = (data) => {
   const point = new Point('sensor_data')
     .tag('source', data.device || 'unknown_device');
 
-  // Tambahkan field sesuai data yang ada
   if (data.ph_sensor !== undefined) point.floatField('ph_sensor', data.ph_sensor);
   if (data.pH_nano !== undefined) point.floatField('pH_nano', data.pH_nano);
   if (data.soil_moisture_1 !== undefined) point.floatField('soil_moisture_1', data.soil_moisture_1);
@@ -56,7 +55,6 @@ const writeSensorData = (data) => {
   }
 };
 
-// Query umum dengan rentang waktu dan filter measurement sensor_data
 const querySensorData = async (start, stop) => {
   const query = `
     from(bucket: "${bucket}")
@@ -76,16 +74,34 @@ const querySensorData = async (start, stop) => {
   });
 };
 
-// Fungsi baru: ambil data sensor dari device tertentu
-const querySensorDataByDevice = async (device, start = '-30d', stop = 'now()') => {
+const getWeeklySensorData = async () => {
   const query = `
     from(bucket: "${bucket}")
-      |> range(start: ${start}, stop: ${stop})
+      |> range(start: -7d)
       |> filter(fn: (r) => r._measurement == "sensor_data")
-      |> filter(fn: (r) => r.device == "${device}")
-      |> filter(fn: (r) => r._field == "ph_sensor" or r._field == "pH_nano")
+      |> aggregateWindow(every: 1d, fn: mean, createEmpty: false)
       |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-      |> sort(columns: ["_time"], desc: false)
+      |> sort(columns: ["_time"])
+  `;
+
+  const result = [];
+  return new Promise((resolve, reject) => {
+    queryApi.queryRows(query, {
+      next: (row, tableMeta) => result.push(tableMeta.toObject(row)),
+      error: reject,
+      complete: () => resolve(result)
+    });
+  });
+};
+
+const getMonthlySensorData = async () => {
+  const query = `
+    from(bucket: "${bucket}")
+      |> range(start: -30d)
+      |> filter(fn: (r) => r._measurement == "sensor_data")
+      |> aggregateWindow(every: 7d, fn: mean, createEmpty: false)
+      |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+      |> sort(columns: ["_time"])
   `;
 
   const result = [];
@@ -149,8 +165,8 @@ module.exports = {
   writeSensorData,
   getLastHourSensorData: () => querySensorData('-1h', 'now()'),
   getDailySensorData: () => querySensorData('today()', 'now()'),
-  getWeeklySensorData: () => querySensorData('-7d', 'now()'),
-  getMonthlySensorData: () => querySensorData('-30d', 'now()'),
+  getWeeklySensorData,
+  getMonthlySensorData,
   getSensorSummaryData,
   getLatestSensorData: () => querySensorData('-1h', 'now()').then(data => data.length ? data[data.length - 1] : null),
   querySensorDataByDevice

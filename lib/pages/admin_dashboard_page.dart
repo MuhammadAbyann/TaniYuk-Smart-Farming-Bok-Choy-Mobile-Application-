@@ -51,11 +51,38 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
   // Hapus pengguna
   Future<void> deleteUser(String id) async {
-    await ApiClient.delete('/api/admin/users/$id');
-    await fetchUsers();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('User dihapus')),
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Konfirmasi"),
+        content: const Text("Yakin ingin menghapus pengguna ini?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Batal"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Hapus"),
+          ),
+        ],
+      ),
     );
+
+    if (confirm == true) {
+      try {
+        await ApiClient.delete('/api/admin/users/$id');
+        await fetchUsers();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User dihapus')),
+        );
+      } catch (e) {
+        debugPrint("Gagal hapus user: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Gagal menghapus user')),
+        );
+      }
+    }
   }
 
   // Logout
@@ -116,8 +143,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     elevation: 4,
                     child: ListTile(
                       leading: const CircleAvatar(child: Icon(Icons.person)),
-                      title: Text(u['email'] ?? 'Email tidak tersedia'),  // Menangani null
-                      subtitle: Text("Role: ${u['role'] ?? 'Role tidak tersedia'}"), // Menangani null
+                      title: Text(u['email'] ?? 'Email tidak tersedia'),
+                      subtitle: Text("Role: ${u['role'] ?? 'Role tidak tersedia'}"),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -146,7 +173,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             if (notifications.isEmpty)
               const Text("Belum ada notifikasi")
             else
-              // Menampilkan daftar notifikasi
               ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -155,8 +181,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   final notif = notifications[i];
                   return ListTile(
                     leading: const Icon(Icons.mail_outline),
-                    title: Text(notif['userEmail'] ?? 'Email tidak tersedia'),  // Menangani null
-                    subtitle: Text("Waktu: ${notif['createdAt'] ?? 'Waktu tidak tersedia'}"), // Menangani null
+                    title: Text(notif['userEmail'] ?? 'Email tidak tersedia'),
+                    subtitle: Text("Waktu: ${notif['createdAt'] ?? 'Waktu tidak tersedia'}"),
                   );
                 },
               ),

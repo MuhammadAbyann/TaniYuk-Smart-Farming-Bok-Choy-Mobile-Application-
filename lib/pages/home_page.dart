@@ -36,182 +36,178 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _fetchSensorData() async {
-  try {
-    Future<List<SensorData>> fetchFunc;
-    switch (selectedInterval) {
-      case 'Daily':
-        fetchFunc = ApiClient.getDailySensorData();
-        break;
-      case 'Weekly':
-        fetchFunc = ApiClient.getWeeklySensorData();
-        break;
-      case 'Monthly':
-        fetchFunc = ApiClient.getMonthlySensorData();
-        break;
-      default:
-        fetchFunc = ApiClient.getDailySensorData();
+    try {
+      Future<List<SensorData>> fetchFunc;
+      switch (selectedInterval) {
+        case 'Daily':
+          fetchFunc = ApiClient.getDailySensorData();
+          break;
+        case 'Weekly':
+          fetchFunc = ApiClient.getWeeklySensorData();
+          break;
+        case 'Monthly':
+          fetchFunc = ApiClient.getMonthlySensorData();
+          break;
+        default:
+          fetchFunc = ApiClient.getDailySensorData();
+      }
+
+      final newData = await fetchFunc;
+      newData.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+      setState(() {
+        _sensorData = newData.length > 10 ? newData.sublist(newData.length - 10) : newData;
+      });
+    } catch (e) {
+      print('Error fetching sensor data: $e');
     }
-
-    final newData = await fetchFunc;
-    newData.sort((a, b) => a.timestamp.compareTo(b.timestamp));
-
-    setState(() {
-      _sensorData = newData.length > 10
-          ? newData.sublist(newData.length - 10)
-          : newData;
-    });
-  } catch (e) {
-    print('Error fetching sensor data: $e');
-  }
-}
-
-
-  bool listEquals(List<SensorData> a, List<SensorData> b) {
-    if (a.length != b.length) return false;
-    for (int i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
   }
 
   Widget _buildCombinedChart() {
-  List<double> soilMoistureValues = _sensorData.map((d) {
-    final values = [
-      d.nanoMoisture1 ?? 0,
-      d.nanoMoisture2 ?? 0,
-      d.nanoMoisture3 ?? 0,
-      d.soilMoisture1 ?? 0,
-      d.soilMoisture2 ?? 0,
-    ];
-    final count = values.where((v) => v > 0).length;
-    if (count == 0) return 0.0;
-    return values.reduce((a, b) => a + b) / count;
-  }).toList();
+    double normalizeLux(double? value) => value != null ? value / 400.0 : 0.0;
 
-  final chartDataCahaya = _sensorData
-      .asMap()
-      .entries
-      .map((entry) => FlSpot(entry.key.toDouble(), entry.value.lux ?? 0.0))
-      .toList();
+    final originalLuxValues = _sensorData.map((e) => e.lux ?? 0.0).toList();
 
-  final chartDataKelembapanTanah = soilMoistureValues
-      .asMap()
-      .entries
-      .map((entry) => FlSpot(entry.key.toDouble(), entry.value))
-      .toList();
+    final chartDataCahaya = _sensorData
+        .asMap()
+        .entries
+        .map((entry) => FlSpot(entry.key.toDouble(), normalizeLux(entry.value.lux)))
+        .toList();
 
-  final chartDataPhTanah = _sensorData
-      .asMap()
-      .entries
-      .map((entry) => FlSpot(entry.key.toDouble(), entry.value.phSensor ?? 0.0))
-      .toList();
+    final chartDataKelembapanBedeng1 = _sensorData
+        .asMap()
+        .entries
+        .map((entry) => FlSpot(entry.key.toDouble(), entry.value.bedeng1.averageMoisture))
+        .toList();
 
-  final chartDataPhNano = _sensorData
-      .asMap()
-      .entries
-      .map((entry) => FlSpot(entry.key.toDouble(), entry.value.pHNano ?? 0.0))
-      .toList(); // Menambahkan pH Nano ke grafik
+    final chartDataKelembapanBedeng2 = _sensorData
+        .asMap()
+        .entries
+        .map((entry) => FlSpot(entry.key.toDouble(), entry.value.bedeng2.averageMoisture))
+        .toList();
 
-  return Container(
-    height: 200,
-    width: double.infinity,
-    decoration: BoxDecoration(
-      color: const Color(0xFF184C45),
-      borderRadius: BorderRadius.circular(16),
-    ),
-    padding: const EdgeInsets.all(12),
-    child: LineChart(
-      LineChartData(
-        gridData: FlGridData(show: false),
-        titlesData: FlTitlesData(show: false),
-        borderData: FlBorderData(show: false),
-        minX: 0,
-        maxX: (_sensorData.length > 0 ? _sensorData.length - 1 : 9).toDouble(),
-        minY: 0,
-        maxY: 1500, // Sesuaikan maxY sesuai data cahaya atau buat dinamis
-        lineBarsData: [
-          LineChartBarData(
-            spots: chartDataCahaya,
-            isCurved: true,
-            color: Colors.yellow,
-            belowBarData: BarAreaData(show: false),
-          ),
-          LineChartBarData(
-            spots: chartDataKelembapanTanah,
-            isCurved: true,
-            color: Colors.blue,
-            belowBarData: BarAreaData(show: false),
-          ),
-          LineChartBarData(
-            spots: chartDataPhTanah,
-            isCurved: true,
-            color: Colors.green,
-            belowBarData: BarAreaData(show: false),
-          ),
-          LineChartBarData(
-            spots: chartDataPhNano, // Tambahkan bar untuk pH Nano
-            isCurved: true,
-            color: Colors.red, // Ubah warna sesuai keinginan
-            belowBarData: BarAreaData(show: false),
-          ),
-        ],
+    final chartDataPhBedeng1 = _sensorData
+        .asMap()
+        .entries
+        .map((entry) => FlSpot(entry.key.toDouble(), entry.value.bedeng1.phSensor ?? 0.0))
+        .toList();
+
+    final chartDataPhBedeng2 = _sensorData
+        .asMap()
+        .entries
+        .map((entry) => FlSpot(entry.key.toDouble(), entry.value.bedeng2.pHNano ?? 0.0))
+        .toList();
+
+    return Container(
+      height: 200,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFF184C45),
+        borderRadius: BorderRadius.circular(16),
       ),
-    ),
-  );
-}
-
+      padding: const EdgeInsets.all(12),
+      child: LineChart(
+        LineChartData(
+          lineTouchData: LineTouchData(
+            enabled: true,
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipItems: (touchedSpots) => touchedSpots.map((spot) {
+                final index = spot.spotIndex;
+                final color = spot.bar.color ?? Colors.white;
+                String label;
+                switch (spot.barIndex) {
+                  case 0:
+                    label = 'Lux: ${originalLuxValues[index].toStringAsFixed(0)}';
+                    break;
+                  case 1:
+                    label = 'Moisture B1: ${_sensorData[index].bedeng1.averageMoisture.toStringAsFixed(1)}%';
+                    break;
+                  case 2:
+                    label = 'Moisture B2: ${_sensorData[index].bedeng2.averageMoisture.toStringAsFixed(1)}%';
+                    break;
+                  case 3:
+                    label = 'pH B1: ${_sensorData[index].bedeng1.phSensor?.toStringAsFixed(2) ?? "--"}';
+                    break;
+                  case 4:
+                    label = 'pH B2: ${_sensorData[index].bedeng2.pHNano?.toStringAsFixed(2) ?? "--"}';
+                    break;
+                  default:
+                    label = '';
+                }
+                return LineTooltipItem(label, TextStyle(color: color, fontWeight: FontWeight.bold));
+              }).toList(),
+            ),
+          ),
+          gridData: FlGridData(show: false),
+          titlesData: FlTitlesData(show: false),
+          borderData: FlBorderData(show: false),
+          minX: 0,
+          maxX: (_sensorData.isNotEmpty ? _sensorData.length - 1 : 9).toDouble(),
+          minY: 0,
+          maxY: 100,
+          lineBarsData: [
+            LineChartBarData(spots: chartDataCahaya, isCurved: true, color: Colors.yellow, dotData: FlDotData(show: true)),
+            LineChartBarData(spots: chartDataKelembapanBedeng1, isCurved: true, color: Colors.blue, dotData: FlDotData(show: true)),
+            LineChartBarData(spots: chartDataKelembapanBedeng2, isCurved: true, color: Colors.cyan, dotData: FlDotData(show: true)),
+            LineChartBarData(spots: chartDataPhBedeng1, isCurved: true, color: Colors.green, dotData: FlDotData(show: true)),
+            LineChartBarData(spots: chartDataPhBedeng2, isCurved: true, color: Colors.red, dotData: FlDotData(show: true)),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildBasicMonitoring(SensorData? latestData) {
-    double? kelembapanTanah;
-    if (latestData != null) {
-      List<double> values = [
-        latestData.nanoMoisture1 ?? 0,
-        latestData.nanoMoisture2 ?? 0,
-        latestData.nanoMoisture3 ?? 0,
-        latestData.soilMoisture1 ?? 0,
-        latestData.soilMoisture2 ?? 0,
-      ];
-      final count = values.where((v) => v > 0).length;
-      kelembapanTanah = count == 0 ? null : values.reduce((a, b) => a + b) / count;
-    }
+    double? kelembapan1 = latestData?.bedeng1.averageMoisture;
+    double? kelembapan2 = latestData?.bedeng2.averageMoisture;
+    double? ph1 = latestData?.bedeng1.phSensor;
+    double? ph2 = latestData?.bedeng2.pHNano;
+
 
     final List<Map<String, dynamic>> basicMonitoringData = [
-      {
-        'icon': Icons.water_drop,
-        'label': 'Kelembapan',
-        'value': kelembapanTanah != null ? '${kelembapanTanah.toStringAsFixed(1)}%' : '--%',
-        'color': (kelembapanTanah != null && kelembapanTanah < 50)
-            ? const Color.fromARGB(255, 139, 0, 0)
-            : Colors.blue[200],
-      },
-      {
-        'icon': Icons.science,
-        'label': 'pH Sensor',
-        'value': latestData != null && latestData.phSensor != null ? '${latestData.phSensor!.toStringAsFixed(1)}' : '--',
-        'color': (latestData != null && (latestData.phSensor != null && (latestData.phSensor! < 5.5 || latestData.phSensor! > 7)))
-            ? const Color.fromARGB(255, 139, 0, 0)
-            : Colors.green[200],
-      },
-      {
-        'icon': Icons.science,
-        'label': 'pH Nano',
-        'value': latestData != null && latestData.pHNano != null ? '${latestData.pHNano!.toStringAsFixed(1)}' : '--',
-        'color': (latestData != null && (latestData.pHNano != null && (latestData.pHNano! < 5.5 || latestData.pHNano! > 7)))
-            ? const Color.fromARGB(255, 139, 0, 0)
-            : Colors.purpleAccent[200],
-      },
-      {
-        'icon': Icons.wb_sunny,
-        'label': 'Cahaya',
-        'value': latestData != null ? '${latestData.lux?.toStringAsFixed(0) ?? '--'} lux' : '-- lux',
-        'color': (latestData != null && latestData.lux != null && latestData.lux! < 800)
-            ? Colors.yellow[200]
-            : Colors.yellow[200],
-      },
-    ];
-
+    {
+      'icon': Icons.water_drop,
+      'label': 'Kelembapan 1',
+      'value': kelembapan1 != null ? '${kelembapan1.toStringAsFixed(1)}%' : '--%',
+      'color': (kelembapan1 != null && kelembapan1 < 50)
+          ? const Color.fromARGB(255, 139, 0, 0)
+          : Colors.blue[200],
+    },
+    {
+      'icon': Icons.water_drop,
+      'label': 'Kelembapan 2',
+      'value': kelembapan2 != null ? '${kelembapan2.toStringAsFixed(1)}%' : '--%',
+      'color': (kelembapan2 != null && kelembapan2 < 50)
+          ? const Color.fromARGB(255, 139, 0, 0)
+          : Colors.cyan[200],
+    },
+    {
+      'icon': Icons.science,
+      'label': 'pH Bedeng 1',
+      'value': ph1 != null ? '${ph1.toStringAsFixed(1)}' : '--',
+      'color': (ph1 != null && (ph1 < 5.5 || ph1 > 7))
+          ? const Color.fromARGB(255, 139, 0, 0)
+          : Colors.green[200],
+    },
+    {
+      'icon': Icons.science,
+      'label': 'pH Bedeng 2',
+      'value': ph2 != null ? '${ph2.toStringAsFixed(1)}' : '--',
+      'color': (ph2 != null && (ph2 < 5.5 || ph2 > 7))
+          ? const Color.fromARGB(255, 139, 0, 0)
+          : const Color.fromARGB(255, 249, 69, 14),
+    },
+    {
+      'icon': Icons.wb_sunny,
+      'label': 'Cahaya',
+      'value': latestData != null ? '${latestData.lux?.toStringAsFixed(0) ?? '--'} lux' : '-- lux',
+      'color': (latestData != null && latestData.lux != null && latestData.lux! < 800)
+          ? Colors.yellow[200]
+          : Colors.yellow[200],
+    },
+  ];
     return SizedBox(
-      height: 110,
+      height: 130,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -306,7 +302,7 @@ class _HomePageState extends State<HomePage> {
             _buildCombinedChart(),
             const SizedBox(height: 10),
             const Text(
-              "Garis Kuning: Cahaya | Garis Biru: Kelembapan | Garis Merah: pH Nano | Garis Hijau : pH Sensor",
+              "Kuning: Cahaya | Biru: Kelembapan B1 | Cyan: Kelembapan B2 | Hijau: pH B1 | Merah: pH B2",
               style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
             ),
             const SizedBox(height: 20),
