@@ -161,6 +161,28 @@ const getSensorSummaryData = async () => {
   });
 };
 
+const querySensorDataByDevice = async (device, start = '-30d', stop = 'now()') => {
+  const query = `
+    from(bucket: "${bucket}")
+      |> range(start: ${start}, stop: ${stop})
+      |> filter(fn: (r) => r._measurement == "sensor_data")
+      |> filter(fn: (r) => r.device == "${device}")
+      |> filter(fn: (r) => r._field == "ph_sensor" or r._field == "pH_nano")
+      |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+      |> sort(columns: ["_time"], desc: false)
+  `;
+
+  const result = [];
+  return new Promise((resolve, reject) => {
+    queryApi.queryRows(query, {
+      next: (row, tableMeta) => result.push(tableMeta.toObject(row)),
+      error: reject,
+      complete: () => resolve(result)
+    });
+  });
+};
+
+
 module.exports = {
   writeSensorData,
   getLastHourSensorData: () => querySensorData('-1h', 'now()'),
